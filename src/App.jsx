@@ -1,15 +1,15 @@
-import { BrowserRouter, Route, Routes } from 'react-router-dom';
-import { CartProvider } from '@/context/CartContext';
-import { AuthNavigationBridge } from '@/components/AuthNavigationBridge';
-import LoginPage from '@/pages/login';
-import HomePlaceholder from '@/pages/HomePlaceholder';
-import CadastroPlaceholder from '@/pages/CadastroPlaceholder';
-import AdminAccess from '@/pages/AdminAccess';
-import { PreviewGate } from '@/pages/preview/PreviewGate';
-import PreviewUnlock from '@/pages/preview/PreviewUnlock';
-import LojaHome from '@/pages/loja/LojaHome';
-import LojaCategoria from '@/pages/loja/LojaCategoria';
-import LojaCarrinho from '@/pages/loja/LojaCarrinho';
+import { AuthNavigationBridge } from "@/components/AuthNavigationBridge";
+import { CartProvider } from "@/context/CartContext";
+import AdminAccess from "@/pages/AdminAccess";
+import Cadastro from "@/pages/Cadastro";
+import HomePlaceholder from "@/pages/HomePlaceholder";
+import LoginPage from "@/pages/login";
+import LojaCarrinho from "@/pages/loja/LojaCarrinho";
+import LojaCategoria from "@/pages/loja/LojaCategoria";
+import LojaHome from "@/pages/loja/LojaHome";
+import { PreviewGate } from "@/pages/preview/PreviewGate";
+import PreviewUnlock from "@/pages/preview/PreviewUnlock";
+import { BrowserRouter, Route, Routes } from "react-router-dom";
 
 export default function App() {
   return (
@@ -18,7 +18,7 @@ export default function App() {
       <CartProvider>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
-          <Route path="/cadastro" element={<CadastroPlaceholder />} />
+          <Route path="/cadastro" element={<Cadastro />} />
           <Route path="/admin" element={<AdminAccess />} />
           <Route path="/preview" element={<PreviewUnlock />} />
           <Route path="/loja" element={<PreviewGate />}>
