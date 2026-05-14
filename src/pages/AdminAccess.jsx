@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { clearStoredToken } from '@/services/api';
 
 const GATEWAY =
   import.meta.env.VITE_GATEWAY_URL || 'http://localhost:3080';
@@ -12,10 +13,7 @@ function AdminLojaSection({ origin }) {
 
   const shareUrl = useMemo(() => {
     if (!origin) return '';
-    if (previewToken) {
-      return `${origin}/preview?t=${encodeURIComponent(previewToken)}`;
-    }
-    return `${origin}/loja`;
+    return previewToken ? `${origin}/preview` : `${origin}/loja`;
   }, [origin, previewToken]);
 
   async function copyShareUrl() {
@@ -31,15 +29,14 @@ function AdminLojaSection({ origin }) {
         Acesso temporário — área de compras
       </h2>
       <p className="mt-2 text-xs text-zinc-400">
-        Correr{' '}
+        Corra{' '}
         <code className="rounded bg-black/40 px-1 text-emerald-300">
           npm run preview:token
         </code>{' '}
         para gerar{' '}
-        <code className="text-emerald-200">VITE_PREVIEW_TOKEN</code>, colar no{' '}
-        <code className="text-emerald-200">.env</code> e reiniciar o Vite. Depois
-        partilha o link abaixo (válido por várias horas neste browser, por
-        sessão).
+        <code className="text-emerald-200">VITE_PREVIEW_TOKEN</code>, cole no{' '}
+        <code className="text-emerald-200">.env</code> e reinicie o Vite. O
+        utilizador insere o código manualmente em <code>/preview</code>.
       </p>
       {!previewToken ? (
         <p className="mt-3 text-xs text-amber-200/90">
@@ -56,7 +53,7 @@ function AdminLojaSection({ origin }) {
             onClick={() => copyShareUrl()}
             className="mt-3 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-500"
           >
-            {copied ? 'Copiado!' : 'Copiar link temporário'}
+            {copied ? 'Copiado!' : 'Copiar link da página de acesso'}
           </button>
         </>
       )}
@@ -64,12 +61,8 @@ function AdminLojaSection({ origin }) {
   );
 }
 
-/**
- * Painel para aceder ao projeto a partir de outro dispositivo/rede:
- * — com `npm run dev`, abre também em http://<IP-da-PC>:5173
- * — password opcional: crie `.env` com VITE_ADMIN_PASSWORD=sua_senha
- */
 export default function AdminAccess() {
+  const navigate = useNavigate();
   const requiredPassword = import.meta.env.VITE_ADMIN_PASSWORD || '';
   const [password, setPassword] = useState('');
   const [unlocked, setUnlocked] = useState(() => !requiredPassword);
@@ -88,6 +81,11 @@ export default function AdminAccess() {
       setUnlocked(true);
       setPassword('');
     }
+  }
+
+  function handleLogout() {
+    clearStoredToken();
+    navigate('/login', { replace: true });
   }
 
   if (!unlocked && requiredPassword) {
@@ -127,9 +125,18 @@ export default function AdminAccess() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-zinc-900 to-zinc-950 px-4 py-10 text-zinc-100">
       <div className="mx-auto max-w-2xl">
-        <h1 className="text-2xl font-bold text-amber-400">
-          NeloreBuguer — painel de visualização
-        </h1>
+        <div className="flex items-center justify-between">
+          <h1 className="text-2xl font-bold text-amber-400">
+            NeloreBuguer — painel de visualização
+          </h1>
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="rounded-lg border border-zinc-600 px-3 py-1.5 text-sm text-zinc-400 hover:bg-zinc-800 hover:text-white"
+          >
+            Sair
+          </button>
+        </div>
         <p className="mt-2 text-sm text-zinc-400">
           Use este URL noutro telemóvel ou PC na mesma rede Wi‑Fi para ver o
           site em execução (servidor Vite com{' '}
@@ -167,22 +174,16 @@ export default function AdminAccess() {
 
         <nav className="mt-8 flex flex-wrap gap-3">
           <Link
-            to="/"
+            to="/home"
             className="rounded-lg border border-amber-500/50 bg-amber-500/10 px-4 py-2 text-amber-400 hover:bg-amber-500/20"
           >
-            Início / Login
+            Home
           </Link>
           <Link
             to="/loja"
             className="rounded-lg border border-emerald-500/50 bg-emerald-500/10 px-4 py-2 text-emerald-300 hover:bg-emerald-500/20"
           >
             Loja (compras)
-          </Link>
-          <Link
-            to="/home"
-            className="rounded-lg border border-zinc-600 px-4 py-2 hover:bg-zinc-800"
-          >
-            Home (placeholder)
           </Link>
           <Link
             to="/cadastro"

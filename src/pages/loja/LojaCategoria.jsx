@@ -22,10 +22,13 @@ export default function LojaCategoria() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#E8E8E8]">
-      <LojaHeader />
+    <div className="flex h-screen flex-col overflow-hidden bg-[#E8E8E8]">
 
-      <div className="flex-1 overflow-y-auto px-4 pb-28 pt-4">
+      <div className="mx-auto w-full max-w-lg shrink-0">
+        <LojaHeader />
+      </div>
+
+      <div className="flex-1 overflow-y-auto px-4 pb-4 pt-4">
         <h1 className="mb-10 text-center text-3xl font-bold">
           {cat.titulo.toUpperCase()}
         </h1>
@@ -68,9 +71,10 @@ export default function LojaCategoria() {
         </div>
       </div>
 
-      <div className="sticky bottom-0 z-10 bg-[#E8E8E8]">
+      <div className="mx-auto w-full max-w-lg shrink-0">
         <LojaBottomNav />
       </div>
+
     </div>
   );
 }

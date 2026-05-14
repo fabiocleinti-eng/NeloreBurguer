@@ -14,24 +14,27 @@ export function LojaBottomNav() {
         </span>
         <span className="text-xs font-bold">Home</span>
       </NavLink>
+
       <NavLink to="/loja/carrinho" className={linkClass}>
         <span className="text-3xl leading-none" aria-hidden>
           🛒
         </span>
         <span className="text-xs font-bold">Carrinho</span>
       </NavLink>
-      <span className="flex flex-col items-center text-[#FFA801]">
+
+      <NavLink to="/loja/pedidos" className={linkClass}>
         <span className="text-3xl leading-none" aria-hidden>
           📋
         </span>
         <span className="text-xs font-bold">Pedidos</span>
-      </span>
-      <span className="flex flex-col items-center text-[#FFA801]">
+      </NavLink>
+
+      <NavLink to="/loja/perfil" className={linkClass}>
         <span className="text-3xl leading-none" aria-hidden>
           ☺
         </span>
         <span className="text-xs font-bold">Perfil</span>
-      </span>
+      </NavLink>
     </nav>
   );
 }

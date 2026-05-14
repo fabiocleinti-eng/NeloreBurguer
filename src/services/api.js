@@ -2,25 +2,40 @@ import axios from 'axios';
 
 const GATEWAY_BASE_URL = import.meta.env.VITE_GATEWAY_URL || 'http://localhost:3080';
 
-/** Chave única do JWT no localStorage (Zero Trust). */
 export const TOKEN_KEY = 'nelore_jwt';
 
 let authNavigate = null;
 
-/**
- * Injeta `navigate` do React Router para redirecionar sem recarregar a SPA.
- * Deve ser chamado uma vez num componente dentro de `<BrowserRouter>`.
- */
 export function setAuthNavigate(navigateFn) {
   authNavigate = typeof navigateFn === 'function' ? navigateFn : null;
 }
 
-function clearSessionAndRedirectToLogin() {
-  try {
-    localStorage.clear();
-  } catch {
-    /* ignore */
+function generateRequestId() {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    return crypto.randomUUID();
   }
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    return (c === 'x' ? r : (r & 0x3) | 0x8).toString(16);
+  });
+}
+
+export function getStoredToken() {
+  try {
+    return sessionStorage.getItem(TOKEN_KEY);
+  } catch {
+    return null;
+  }
+}
+
+export function clearStoredToken() {
+  try {
+    sessionStorage.removeItem(TOKEN_KEY);
+  } catch { /* ignore */ }
+}
+
+function clearSessionAndRedirectToLogin() {
+  clearStoredToken();
 
   const path = `${window.location.pathname}${window.location.search}${window.location.hash}`;
   if (authNavigate) {
@@ -41,10 +56,11 @@ const api = axios.create({
 
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem(TOKEN_KEY);
+    const token = getStoredToken();
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+    config.headers['X-Request-Id'] = generateRequestId();
     return config;
   },
   (error) => Promise.reject(error)
@@ -54,16 +70,41 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     const status = error.response?.status;
+
     if (status === 401 || status === 403) {
-      clearSessionAndRedirectToLogin();
+      // Em modo dev bypass não redireciona — token fake é esperado falhar no gateway
+      if (import.meta.env.VITE_DEV_BYPASS !== 'true') {
+        clearSessionAndRedirectToLogin();
+      }
+      return Promise.reject(error);
     }
+
+    if (status === 429) {
+      const retryAfter = error.response?.headers?.['retry-after'];
+      const msg = retryAfter
+        ? `Muitas tentativas. Aguarde ${retryAfter}s e tente novamente.`
+        : 'Muitas tentativas. Aguarde alguns minutos e tente novamente.';
+      return Promise.reject(new Error(msg));
+    }
+
+    if (status === 503 || (!error.response && error.code === 'ECONNABORTED')) {
+      return Promise.reject(
+        new Error('Serviço temporariamente indisponível. Tente novamente em instantes.')
+      );
+    }
+
+    if (!error.response) {
+      return Promise.reject(
+        new Error('Sem conexão com o servidor. Verifique sua internet.')
+      );
+    }
+
     return Promise.reject(error);
   }
 );
 
 export default api;
 
-/** Normaliza token devolvido pelo Gateway (várias convenções comuns). */
 export function persistTokenFromResponse(data) {
   if (!data || typeof data !== 'object') return null;
   const raw =
@@ -73,46 +114,40 @@ export function persistTokenFromResponse(data) {
     data.jwt ??
     data?.data?.token;
   if (typeof raw === 'string' && raw.length > 0) {
-    localStorage.setItem(TOKEN_KEY, raw);
+    try {
+      sessionStorage.setItem(TOKEN_KEY, raw);
+    } catch {
+      return null;
+    }
     return raw;
   }
   return null;
 }
 
-/**
- * Módulo Usuários e Autenticação — Gateway apenas.
- * POST /api/usuarios/login | /api/usuarios/cadastro
- */
 export const usuariosApi = {
   login: (body) => api.post('/api/usuarios/login', body),
   cadastro: (body) => api.post('/api/usuarios/cadastro', body),
+  esqueciSenha: (body) => api.post('/api/usuarios/esqueci-senha', body),
+  redefinirSenha: (body) => api.post('/api/usuarios/redefinir-senha', body),
+  loginGoogle: (body) => api.post('/api/usuarios/login/google', body),
 };
 
-/**
- * Restaurantes e cardápio — GET /api/restaurantes
- */
 export const restaurantesApi = {
   listar: () => api.get('/api/restaurantes'),
 };
 
-/**
- * Pedidos — POST /api/pedidos | GET /api/pedidos/meus-pedidos
- */
 export const pedidosApi = {
   criar: (payload) => api.post('/api/pedidos', payload),
-  meusPedidos: () => api.get('/api/pedidos/meus-pedidos'),
+  meusPedidos: () => api.get('/api/pedidos'),
+  buscarPorId: (id) => api.get(`/api/pedidos/${encodeURIComponent(id)}`),
+  cancelar: (id) => api.delete(`/api/pedidos/${encodeURIComponent(id)}`),
+  avaliar: (id, payload) => api.post(`/api/pedidos/${encodeURIComponent(id)}/avaliacao`, payload),
 };
 
-/**
- * Pagamentos — POST /api/pagamentos/processar
- */
 export const pagamentosApi = {
   processar: (payload) => api.post('/api/pagamentos/processar', payload),
 };
 
-/**
- * Entregadores — GET /api/entregadores/status/:pedidoId
- */
 export const entregadoresApi = {
   statusEntrega: (pedidoId) =>
     api.get(`/api/entregadores/status/${encodeURIComponent(pedidoId)}`),
