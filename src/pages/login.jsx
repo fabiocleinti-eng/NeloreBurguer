@@ -10,6 +10,22 @@ import { TOKEN_KEY, persistTokenFromResponse, usuariosApi } from '@/services/api
 const DEV_BYPASS = import.meta.env.VITE_DEV_BYPASS === 'true';
 const GOOGLE_ENABLED = Boolean(import.meta.env.VITE_GOOGLE_CLIENT_ID);
 
+// Componente separado para que useGoogleLogin só seja chamado quando Google está ativo
+function GoogleLoginButton({ onSuccess, onError, disabled }) {
+  const login = useGoogleLogin({ onSuccess, onError });
+  return (
+    <button
+      type="button"
+      onClick={() => login()}
+      disabled={disabled}
+      className="flex items-center gap-2 rounded-lg border border-[#FFA801]/40 bg-white/10 px-4 py-2 text-sm font-medium text-white transition hover:bg-white/20 disabled:opacity-50"
+    >
+      <img src={googleImg} alt="" className="h-5 w-5 rounded object-cover" />
+      {disabled ? 'Aguardando Google…' : 'Entrar com Google'}
+    </button>
+  );
+}
+
 function gerarTokenDevFake() {
   // JWT fake apenas para navegação local — sem assinatura válida
   const header = btoa(JSON.stringify({ alg: 'HS256', typ: 'JWT' }));
@@ -31,6 +47,32 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [loadingGoogle, setLoadingGoogle] = useState(false);
   const [erro, setErro] = useState('');
+
+  async function handleGoogleSuccess(tokenResponse) {
+    setErro('');
+    setLoadingGoogle(true);
+    try {
+      const { data } = await usuariosApi.loginGoogle({
+        accessToken: tokenResponse.access_token,
+      });
+      const token = persistTokenFromResponse(data);
+      if (!token) {
+        setErro('Login com Google OK, mas o servidor não retornou um token. Contacte o suporte.');
+        return;
+      }
+      navigate('/home', { replace: true });
+    } catch (err) {
+      const msg =
+        err.response?.data?.message ||
+        err.response?.data?.erro ||
+        err.response?.data?.error ||
+        err.message ||
+        'Não foi possível entrar com o Google. Tente novamente.';
+      setErro(typeof msg === 'string' ? msg : 'Erro ao entrar com Google.');
+    } finally {
+      setLoadingGoogle(false);
+    }
+  }
 
   async function handleLogin(e) {
     e.preventDefault();
@@ -68,38 +110,6 @@ export default function LoginPage() {
     }
   }
 
-  const handleGoogleSuccess = useGoogleLogin({
-    onSuccess: async (tokenResponse) => {
-      setErro('');
-      setLoadingGoogle(true);
-      try {
-        const { data } = await usuariosApi.loginGoogle({
-          accessToken: tokenResponse.access_token,
-        });
-
-        const token = persistTokenFromResponse(data);
-        if (!token) {
-          setErro('Login com Google OK, mas o servidor não retornou um token. Contacte o suporte.');
-          return;
-        }
-
-        navigate('/home', { replace: true });
-      } catch (err) {
-        const msg =
-          err.response?.data?.message ||
-          err.response?.data?.erro ||
-          err.response?.data?.error ||
-          err.message ||
-          'Não foi possível entrar com o Google. Tente novamente.';
-        setErro(typeof msg === 'string' ? msg : 'Erro ao entrar com Google.');
-      } finally {
-        setLoadingGoogle(false);
-      }
-    },
-    onError: () => {
-      setErro('Login com Google cancelado ou falhou. Tente novamente.');
-    },
-  });
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-[#636363] px-4 pb-10 pt-8 font-sans text-[13px] text-[#FFA801]">
@@ -179,15 +189,11 @@ export default function LoginPage() {
         <p className="text-xs text-white/50">ou continue com</p>
 
         {GOOGLE_ENABLED ? (
-          <button
-            type="button"
-            onClick={() => handleGoogleSuccess()}
+          <GoogleLoginButton
+            onSuccess={handleGoogleSuccess}
+            onError={() => setErro('Login com Google cancelado ou falhou. Tente novamente.')}
             disabled={loadingGoogle || loading}
-            className="flex items-center gap-2 rounded-lg border border-[#FFA801]/40 bg-white/10 px-4 py-2 text-sm font-medium text-white transition hover:bg-white/20 disabled:opacity-50"
-          >
-            <img src={googleImg} alt="" className="h-5 w-5 rounded object-cover" />
-            {loadingGoogle ? 'Aguardando Google…' : 'Entrar com Google'}
-          </button>
+          />
         ) : (
           <button
             type="button"

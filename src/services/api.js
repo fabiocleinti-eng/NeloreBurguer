@@ -126,7 +126,7 @@ export function persistTokenFromResponse(data) {
 
 export const usuariosApi = {
   login: (body) => api.post('/api/usuarios/login', body),
-  cadastro: (body) => api.post('/api/usuarios/cadastro', body),
+  cadastro: (body) => api.post('/api/usuarios/register', body),
   esqueciSenha: (body) => api.post('/api/usuarios/esqueci-senha', body),
   redefinirSenha: (body) => api.post('/api/usuarios/redefinir-senha', body),
   loginGoogle: (body) => api.post('/api/usuarios/login/google', body),

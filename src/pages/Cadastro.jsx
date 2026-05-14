@@ -6,6 +6,7 @@ import { Link, useNavigate } from "react-router-dom";
 export default function Cadastro() {
   const navigate = useNavigate();
   const [nome, setNome] = useState("");
+  const [cpf, setCpf] = useState("");
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
   const [loading, setLoading] = useState(false);
@@ -16,8 +17,14 @@ export default function Cadastro() {
     setErro("");
 
     // Validação básica
-    if (!nome.trim() || !email.trim() || !senha) {
-      setErro("Preencha todos os campos (nome, email e senha).");
+    if (!nome.trim() || !cpf.trim() || !email.trim() || !senha) {
+      setErro("Preencha todos os campos (nome, CPF, email e senha).");
+      return;
+    }
+
+    const cpfDigits = cpf.replace(/\D/g, "");
+    if (cpfDigits.length !== 11) {
+      setErro("CPF deve conter 11 dígitos.");
       return;
     }
 
@@ -35,6 +42,7 @@ export default function Cadastro() {
     try {
       const { data } = await usuariosApi.cadastro({
         nome: nome.trim(),
+        cpf: cpfDigits,
         email: email.trim(),
         senha,
       });
@@ -79,6 +87,16 @@ export default function Cadastro() {
           placeholder="Nome Completo"
           value={nome}
           onChange={(e) => setNome(e.target.value)}
+          disabled={loading}
+          className="h-[38px] rounded-[20px] border-[3px] border-solid border-[#FFA801] bg-[#636363] pl-2.5 text-[#FFA801] placeholder:text-[#FFA801]/70 focus:outline-none focus:ring-2 focus:ring-[#FFA801]/40 disabled:opacity-50"
+        />
+        <input
+          type="text"
+          name="cpf"
+          placeholder="CPF (somente números)"
+          value={cpf}
+          onChange={(e) => setCpf(e.target.value)}
+          maxLength={14}
           disabled={loading}
           className="h-[38px] rounded-[20px] border-[3px] border-solid border-[#FFA801] bg-[#636363] pl-2.5 text-[#FFA801] placeholder:text-[#FFA801]/70 focus:outline-none focus:ring-2 focus:ring-[#FFA801]/40 disabled:opacity-50"
         />
