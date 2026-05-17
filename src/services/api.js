@@ -134,6 +134,14 @@ export const usuariosApi = {
 
 export const restaurantesApi = {
   listar: () => api.get('/api/restaurantes'),
+  buscarPorId: (id) => api.get(`/api/restaurantes/${encodeURIComponent(id)}`),
+};
+
+export const cardapioApi = {
+  categoriasPorRestaurante: (restauranteId) =>
+    api.get(`/api/categorias/restaurante/${encodeURIComponent(restauranteId)}`),
+  itensPorCategoria: (categoriaId) =>
+    api.get(`/api/itens?categoria_id=${encodeURIComponent(categoriaId)}`),
 };
 
 export const pedidosApi = {

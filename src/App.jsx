@@ -9,6 +9,7 @@ import RedefinirSenha from "@/pages/RedefinirSenha";
 import LojaCarrinho from "@/pages/loja/LojaCarrinho";
 import LojaCategoria from "@/pages/loja/LojaCategoria";
 import LojaHome from "@/pages/loja/LojaHome";
+import LojaPedidoDetalhe from "@/pages/loja/LojaPedidoDetalhe";
 import LojaPedidos from "@/pages/loja/LojaPedidos";
 import LojaPerfil from "@/pages/loja/LojaPerfil";
 import { PreviewGate } from "@/pages/preview/PreviewGate";
@@ -53,9 +54,10 @@ export default function App() {
             <Route path="/home" element={<HomePlaceholder />} />
             <Route path="/loja" element={<PreviewGate />}>
               <Route index element={<LojaHome />} />
-              <Route path="categoria/:slug" element={<LojaCategoria />} />
+              <Route path="categoria/:id" element={<LojaCategoria />} />
               <Route path="carrinho" element={<LojaCarrinho />} />
               <Route path="pedidos" element={<LojaPedidos />} />
+              <Route path="pedidos/:id" element={<LojaPedidoDetalhe />} />
               <Route path="perfil" element={<LojaPerfil />} />
             </Route>
           </Route>

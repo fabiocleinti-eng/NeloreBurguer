@@ -5,11 +5,15 @@ import { LojaBottomNav } from '@/components/loja/LojaBottomNav';
 import { useCart } from '@/context/CartContext';
 import { pedidosApi } from '@/services/api';
 
-/**
- * ID fixo do restaurante enquanto o ms-cardapio não retorna o UUID real.
- * Substituir pelo valor do banco quando o microserviço estiver integrado.
- */
-const RESTAURANTE_ID = '00000000-0000-0000-0000-000000000001';
+const RESTAURANTE_ID_KEY = 'nelore_restaurante_id';
+
+function getRestauranteId() {
+  try {
+    return sessionStorage.getItem(RESTAURANTE_ID_KEY) || '00000000-0000-0000-0000-000000000001';
+  } catch {
+    return '00000000-0000-0000-0000-000000000001';
+  }
+}
 
 const TAXA_ENTREGA = 500; // centavos (R$ 5,00)
 
@@ -53,7 +57,7 @@ export default function LojaCarrinho() {
     setErroMsg('');
 
     const payload = {
-      restauranteId: RESTAURANTE_ID,
+      restauranteId: getRestauranteId(),
       itens: items.map((it) => ({
         produtoId: String(it.id),
         nomeProduto: it.nome,

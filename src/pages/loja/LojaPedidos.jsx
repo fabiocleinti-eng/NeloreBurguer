@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { LojaHeader } from '@/components/loja/LojaHeader';
 import { LojaBottomNav } from '@/components/loja/LojaBottomNav';
 import { pedidosApi } from '@/services/api';
@@ -107,9 +107,10 @@ export default function LojaPedidos() {
                 const podeCancelar = p.status === 'AGUARDANDO_CONFIRMACAO';
 
                 return (
-                  <li
-                    key={id}
-                    className="rounded-xl border border-zinc-200 p-4"
+                  <li key={id}>
+                  <Link
+                    to={`/loja/pedidos/${id}`}
+                    className="block rounded-xl border border-zinc-200 p-4 transition hover:border-[#D02727]/40 hover:shadow-sm"
                   >
                     <div className="flex items-center justify-between">
                       <span className="text-sm font-bold text-zinc-800">
@@ -152,16 +153,9 @@ export default function LojaPedidos() {
                           Total: R$ {totalReais}
                         </p>
                       )}
-                      {podeCancelar && (
-                        <button
-                          type="button"
-                          className="text-xs text-red-500 underline"
-                          onClick={() => pedidosApi.cancelar(id).catch(() => {})}
-                        >
-                          Cancelar
-                        </button>
-                      )}
+                      <span className="text-xs text-[#D02727]">Ver detalhes ›</span>
                     </div>
+                  </Link>
                   </li>
                 );
               })}
