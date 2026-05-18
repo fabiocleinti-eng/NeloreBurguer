@@ -9,11 +9,17 @@ import RedefinirSenha from "@/pages/RedefinirSenha";
 import LojaCarrinho from "@/pages/loja/LojaCarrinho";
 import LojaCategoria from "@/pages/loja/LojaCategoria";
 import LojaHome from "@/pages/loja/LojaHome";
+import LojaRestaurante from "@/pages/loja/LojaRestaurante";
 import LojaPedidoDetalhe from "@/pages/loja/LojaPedidoDetalhe";
 import LojaPedidos from "@/pages/loja/LojaPedidos";
 import LojaPerfil from "@/pages/loja/LojaPerfil";
 import { PreviewGate } from "@/pages/preview/PreviewGate";
 import PreviewUnlock from "@/pages/preview/PreviewUnlock";
+import RestauranteCadastro from "@/pages/restaurante/RestauranteCadastro";
+import RestauranteDashboard from "@/pages/restaurante/RestauranteDashboard";
+import RestauranteEntregadores from "@/pages/restaurante/RestauranteEntregadores";
+import RestauranteCardapio from "@/pages/restaurante/RestauranteCardapio";
+import RestauranteLogin from "@/pages/restaurante/RestauranteLogin";
 import { getStoredToken } from "@/services/api";
 import { BrowserRouter, Navigate, Outlet, Route, Routes } from "react-router-dom";
 
@@ -29,7 +35,10 @@ function isTokenExpired(token) {
   }
 }
 
+const DEV_BYPASS = import.meta.env.VITE_DEV_BYPASS === 'true';
+
 function RequireAuth() {
+  if (DEV_BYPASS) return <Outlet />;
   const token = getStoredToken();
   if (!token || isTokenExpired(token)) {
     return <Navigate to="/login" replace />;
@@ -43,17 +52,32 @@ export default function App() {
       <AuthNavigationBridge />
       <CartProvider>
         <Routes>
+          {/* ── Login unificado (toggle usuário / restaurante) ── */}
+          <Route path="/" element={<LoginPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/cadastro" element={<Cadastro />} />
           <Route path="/esqueci-senha" element={<EsqueciSenha />} />
           <Route path="/redefinir-senha" element={<RedefinirSenha />} />
           <Route path="/preview" element={<PreviewUnlock />} />
 
+          {/* ── Restaurante (público) ── */}
+          <Route path="/restaurante/login" element={<RestauranteLogin />} />
+          <Route path="/restaurante/cadastro" element={<RestauranteCadastro />} />
+
+          {/* ── Restaurante (autenticado) ── */}
+          <Route element={<RequireAuth />}>
+            <Route path="/restaurante/dashboard" element={<RestauranteDashboard />} />
+            <Route path="/restaurante/entregadores" element={<RestauranteEntregadores />} />
+            <Route path="/restaurante/cardapio" element={<RestauranteCardapio />} />
+          </Route>
+
+          {/* ── Área do cliente (autenticada) ── */}
           <Route element={<RequireAuth />}>
             <Route path="/admin" element={<AdminAccess />} />
             <Route path="/home" element={<HomePlaceholder />} />
             <Route path="/loja" element={<PreviewGate />}>
               <Route index element={<LojaHome />} />
+              <Route path="restaurante/:restauranteId" element={<LojaRestaurante />} />
               <Route path="categoria/:id" element={<LojaCategoria />} />
               <Route path="carrinho" element={<LojaCarrinho />} />
               <Route path="pedidos" element={<LojaPedidos />} />
@@ -61,8 +85,6 @@ export default function App() {
               <Route path="perfil" element={<LojaPerfil />} />
             </Route>
           </Route>
-
-          <Route path="/" element={<Navigate to="/login" replace />} />
         </Routes>
       </CartProvider>
     </BrowserRouter>

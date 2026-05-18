@@ -1,10 +1,9 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
-import fotoCards from '@assets/images/fotoCards.png';
+import { useNavigate } from 'react-router-dom';
 import { LojaHeader } from '@/components/loja/LojaHeader';
 import { LojaBottomNav } from '@/components/loja/LojaBottomNav';
-import { CATEGORIAS } from '@/data/mockCardapio';
-import { restaurantesApi, cardapioApi } from '@/services/api';
+import { RESTAURANTES_MOCK } from '@/data/mockCardapio';
+import { restaurantesApi } from '@/services/api';
 
 const RESTAURANTE_ID_KEY = 'nelore_restaurante_id';
 
@@ -12,78 +11,104 @@ function salvarRestauranteId(id) {
   try { sessionStorage.setItem(RESTAURANTE_ID_KEY, id); } catch { /* ignore */ }
 }
 
-function StatusRestaurante({ status }) {
-  if (!status || status === 'ABERTO') return null;
-  const cor = status === 'FECHADO'
-    ? 'bg-yellow-400/20 text-yellow-200'
-    : 'bg-red-900/40 text-red-200';
-  const texto = status === 'FECHADO' ? '⏰ Restaurante fechado no momento' : '🚫 Restaurante inativo';
+function BadgeStatus({ status }) {
+  if (!status || status === 'ABERTO') {
+    return (
+      <span className="rounded-full bg-green-500/20 px-2 py-0.5 text-[11px] font-semibold text-green-300">
+        ● Aberto
+      </span>
+    );
+  }
   return (
-    <div className={`mx-auto w-full max-w-lg shrink-0 px-4 pb-1 text-center text-xs font-semibold ${cor}`}>
-      {texto}
-    </div>
+    <span className="rounded-full bg-red-500/20 px-2 py-0.5 text-[11px] font-semibold text-red-300">
+      ● Fechado
+    </span>
+  );
+}
+
+function CardRestaurante({ restaurante, onClick }) {
+  const taxa = restaurante.taxaEntrega
+    ? `R$ ${(restaurante.taxaEntrega / 100).toFixed(2).replace('.', ',')}`
+    : 'Grátis';
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="flex w-full items-center gap-4 rounded-2xl bg-white p-4 shadow-sm transition hover:shadow-md active:scale-[0.98] text-left"
+    >
+      {/* Logo do restaurante */}
+      <div className="h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-[#E8E8E8]">
+        {restaurante.imagem ? (
+          <img src={restaurante.imagem} alt={restaurante.nome} className="h-full w-full object-cover" />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center text-2xl">🍔</div>
+        )}
+      </div>
+
+      {/* Infos */}
+      <div className="flex flex-1 flex-col gap-1">
+        <div className="flex items-center justify-between">
+          <p className="font-bold text-zinc-800">{restaurante.nome}</p>
+          <BadgeStatus status={restaurante.status} />
+        </div>
+        <p className="text-xs text-zinc-500">{restaurante.tipo}</p>
+        <div className="flex items-center gap-3 text-xs text-zinc-400">
+          {restaurante.avaliacao && (
+            <span>⭐ {restaurante.avaliacao}</span>
+          )}
+          <span>🛵 {taxa}</span>
+          {restaurante.tempoEstimado && (
+            <span>⏱ {restaurante.tempoEstimado}</span>
+          )}
+        </div>
+      </div>
+    </button>
   );
 }
 
 export default function LojaHome() {
-  const [categorias, setCategorias] = useState(CATEGORIAS);
-  const [statusRestaurante, setStatusRestaurante] = useState(null);
-  const [usandoMock, setUsandoMock] = useState(true);
+  const navigate = useNavigate();
+  const [restaurantes, setRestaurantes] = useState(RESTAURANTES_MOCK);
   const [carregando, setCarregando] = useState(true);
+  const [busca, setBusca] = useState('');
 
   useEffect(() => {
     let cancelado = false;
-
-    async function carregarCardapio() {
+    async function carregar() {
       try {
-        // 1. Buscar restaurantes
-        const { data: dataRest } = await restaurantesApi.listar();
+        const { data } = await restaurantesApi.listar();
         if (cancelado) return;
-
-        const lista = Array.isArray(dataRest)
-          ? dataRest
-          : Array.isArray(dataRest?.data)
-            ? dataRest.data
-            : [];
-
-        if (lista.length === 0) return;
-
-        const restaurante = lista[0];
-        const restauranteId = restaurante.id;
-
-        salvarRestauranteId(restauranteId);
-        setStatusRestaurante(restaurante.status ?? null);
-
-        // 2. Buscar categorias do restaurante
-        const { data: dataCat } = await cardapioApi.categoriasPorRestaurante(restauranteId);
-        if (cancelado) return;
-
-        const cats = Array.isArray(dataCat)
-          ? dataCat
-          : Array.isArray(dataCat?.data)
-            ? dataCat.data
-            : [];
-
-        if (cats.length === 0) return;
-
-        setCategorias(cats.map((cat) => ({
-          id: cat.id,
-          titulo: cat.titulo || cat.nome || cat.title || '',
-          destaque: cat.destaque || '',
-          descricao: cat.descricao || '',
-        })));
-        setUsandoMock(false);
-
-      } catch {
-        // fallback silencioso para mock
-      } finally {
+        const lista = Array.isArray(data) ? data : Array.isArray(data?.data) ? data.data : [];
+        if (lista.length > 0) {
+          setRestaurantes(lista.map((r) => ({
+            id: r.id,
+            nome: r.nome || r.name || '',
+            tipo: r.tipo || r.categoria || r.type || 'Restaurante',
+            status: r.status || 'ABERTO',
+            taxaEntrega: r.taxaEntrega ?? r.taxa_entrega ?? 500,
+            tempoEstimado: r.tempoEstimado || r.tempo_estimado || '',
+            avaliacao: r.avaliacao ?? null,
+            imagem: r.imagem || r.logo || null,
+          })));
+        }
+      } catch { /* mantém mock */ } finally {
         if (!cancelado) setCarregando(false);
       }
     }
-
-    carregarCardapio();
+    carregar();
     return () => { cancelado = true; };
   }, []);
+
+  function abrirRestaurante(restaurante) {
+    salvarRestauranteId(restaurante.id);
+    navigate(`/loja/restaurante/${restaurante.id}`);
+  }
+
+  const filtrados = restaurantes.filter((r) =>
+    r.nome.toLowerCase().includes(busca.toLowerCase()) ||
+    r.tipo.toLowerCase().includes(busca.toLowerCase())
+  );
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-gradient-to-b from-[#701515] to-[#D02727]">
@@ -92,46 +117,47 @@ export default function LojaHome() {
         <LojaHeader />
       </div>
 
-      <StatusRestaurante status={statusRestaurante} />
+      {/* Barra de busca */}
+      <div className="mx-auto w-full max-w-lg shrink-0 px-4 pb-3">
+        <input
+          type="text"
+          placeholder="🔍  Buscar restaurante..."
+          value={busca}
+          onChange={(e) => setBusca(e.target.value)}
+          className="w-full rounded-2xl border-2 border-white/20 bg-white/10 px-4 py-2.5 text-sm text-white placeholder:text-white/50 focus:border-[#FFA801]/60 focus:outline-none"
+        />
+      </div>
 
-      {(usandoMock && !carregando) && (
-        <div className="mx-auto w-full max-w-lg shrink-0 px-4 pb-1 text-center text-xs text-white/60">
-          Cardápio demo — aguardando microserviço.
-        </div>
-      )}
-      {carregando && (
-        <div className="mx-auto w-full max-w-lg shrink-0 px-4 pb-1 text-center text-xs text-white/60">
-          Carregando cardápio…
-        </div>
-      )}
-
+      {/* Lista */}
       <div className="mx-auto flex w-full max-w-lg flex-1 flex-col overflow-hidden rounded-t-[22px] bg-[#E8E8E8]">
         <div className="flex-1 overflow-y-auto px-4 pt-4 pb-4">
-          {categorias.map((cat) => (
-            <Link
-              key={cat.id ?? cat.slug}
-              to={`/loja/categoria/${cat.id ?? cat.slug}`}
-              className="mx-auto mb-6 block w-full max-w-[336px] rounded-[22px] bg-white pl-5 pr-4 pt-3 pb-5 shadow-sm transition hover:shadow-md"
-            >
-              <h2 className="text-[30px] font-bold leading-tight">{cat.titulo}</h2>
-              <img
-                src={fotoCards}
-                alt=""
-                className="mx-auto mt-12 mb-4 block h-[101px] w-[270px] rounded-[15px] object-cover"
-              />
-              <p className="ml-3 text-[17px] font-bold">{cat.destaque}</p>
-              <p className="ml-3 mt-1 max-w-[210px] text-xs text-[#FFA801]">
-                {cat.descricao}
-              </p>
-            </Link>
-          ))}
+
+          <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-400">
+            {carregando ? 'Carregando…' : `${filtrados.length} restaurante${filtrados.length !== 1 ? 's' : ''} disponível${filtrados.length !== 1 ? 'is' : ''}`}
+          </p>
+
+          {filtrados.length === 0 && !carregando ? (
+            <div className="mt-10 text-center text-zinc-400">
+              <p className="text-4xl">🍽️</p>
+              <p className="mt-2 text-sm">Nenhum restaurante encontrado.</p>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-3">
+              {filtrados.map((r) => (
+                <CardRestaurante
+                  key={r.id}
+                  restaurante={r}
+                  onClick={() => abrirRestaurante(r)}
+                />
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
       <div className="mx-auto w-full max-w-lg shrink-0">
         <LojaBottomNav />
       </div>
-
     </div>
   );
 }

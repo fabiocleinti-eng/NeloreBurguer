@@ -17,15 +17,28 @@ function getRestauranteId() {
 
 const TAXA_ENTREGA = 500; // centavos (R$ 5,00)
 
-const ENDERECO_PADRAO = {
-  rua: 'Rua Soares Cabral',
-  numero: '8',
-  complemento: '104',
-  bairro: 'Laranjeiras',
-  cidade: 'Rio de Janeiro',
-  estado: 'RJ',
-  cep: '22240-070',
-};
+function getLocalizacao() {
+  try {
+    const display = sessionStorage.getItem('nelore_localizacao') || '';
+    const dadosRaw = sessionStorage.getItem('nelore_localizacao_dados');
+    const dados = dadosRaw ? JSON.parse(dadosRaw) : null;
+    return { display, dados };
+  } catch {
+    return { display: '', dados: null };
+  }
+}
+
+function montarEnderecoPayload(dados) {
+  if (!dados) return null;
+  return {
+    rua: dados.rua || '',
+    numero: dados.numero || '',
+    bairro: dados.bairro || '',
+    cidade: dados.cidade || '',
+    estado: dados.uf || '',
+    cep: dados.cep || '',
+  };
+}
 
 const FORMAS_PAGAMENTO = [
   { value: 'PIX',             label: 'Pix' },
@@ -48,6 +61,7 @@ export default function LojaCarrinho() {
   const [erroMsg, setErroMsg] = useState('');
   const [numeroPedido, setNumeroPedido] = useState(null);
 
+  const { display: enderecoDisplay, dados: enderecoDados } = getLocalizacao();
   const totalComTaxa = total + TAXA_ENTREGA / 100;
 
   async function handleFinalizarPedido() {
@@ -64,7 +78,7 @@ export default function LojaCarrinho() {
         quantidade: it.quantidade || 1,
         precoUnitario: reaisParaCentavos(it.preco),
       })),
-      endereco: ENDERECO_PADRAO,
+      endereco: montarEnderecoPayload(enderecoDados),
       formaPagamento,
       taxaEntrega: TAXA_ENTREGA,
     };
@@ -147,9 +161,18 @@ export default function LojaCarrinho() {
       {/* Endereço */}
       <div className="mx-auto w-full max-w-lg shrink-0 px-8 py-3">
         <h2 className="text-2xl font-bold text-[#FFA801]">Endereço</h2>
-        <p className="mt-1 text-xl font-bold leading-snug text-white">
-          {ENDERECO_PADRAO.bairro}, {ENDERECO_PADRAO.rua} n°{ENDERECO_PADRAO.numero} / {ENDERECO_PADRAO.complemento}
-        </p>
+        {enderecoDisplay ? (
+          <p className="mt-1 text-xl font-bold leading-snug text-white">
+            {enderecoDisplay}
+          </p>
+        ) : (
+          <p className="mt-1 text-sm text-white/50">
+            Localização não definida —{' '}
+            <Link to="/login" className="underline text-[#FFA801]/70">
+              definir no login
+            </Link>
+          </p>
+        )}
       </div>
 
       {/* Painel branco com scroll */}

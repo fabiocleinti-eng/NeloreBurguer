@@ -1,4 +1,19 @@
 import imgCarrossel from '@assets/images/imagemCarrossel.png';
+import fotoCapa from '@assets/images/fotoCapa.png';
+
+/** Restaurantes de demonstração — substitui quando ms-restaurantes estiver pronto */
+export const RESTAURANTES_MOCK = [
+  {
+    id: '00000000-0000-0000-0000-000000000001',
+    nome: 'Nelore Burguer',
+    tipo: 'Hambúrgueres Artesanais',
+    status: 'ABERTO',
+    taxaEntrega: 500,
+    tempoEstimado: '30–45 min',
+    avaliacao: 4.8,
+    imagem: fotoCapa,
+  },
+];
 
 /** Cardápio de demonstração (até o Gateway estar ligado ao GET /api/restaurantes). */
 export const CATEGORIAS = [

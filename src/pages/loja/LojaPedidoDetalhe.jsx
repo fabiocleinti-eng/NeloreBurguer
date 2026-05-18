@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { LojaHeader } from '@/components/loja/LojaHeader';
 import { LojaBottomNav } from '@/components/loja/LojaBottomNav';
 import { pedidosApi, entregadoresApi } from '@/services/api';
+import { notificarStatusPedido } from '@/utils/notificacoes';
 
 /* ── Configuração dos status ─────────────────────────────── */
 const FLUXO_STATUS = [
@@ -344,6 +345,7 @@ export default function LojaPedidoDetalhe() {
   const [erro, setErro] = useState('');
   const [cancelando, setCancelando] = useState(false);
   const [cancelado, setCancelado] = useState(false);
+  const statusAnterior = useRef(null);
 
   useEffect(() => {
     let canceladoEffect = false;
@@ -353,7 +355,13 @@ export default function LojaPedidoDetalhe() {
       .then(({ data }) => {
         if (canceladoEffect) return;
         const raw = data?.data ?? data;
-        setPedido(normalizarPedido(raw));
+        const p = normalizarPedido(raw);
+        // Notifica se o status mudou desde a última vez que vimos
+        if (p.status && statusAnterior.current && statusAnterior.current !== p.status) {
+          notificarStatusPedido(id, p.status);
+        }
+        statusAnterior.current = p.status;
+        setPedido(p);
       })
       .catch((err) => {
         if (canceladoEffect) return;

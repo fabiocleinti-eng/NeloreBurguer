@@ -130,6 +130,7 @@ export const usuariosApi = {
   esqueciSenha: (body) => api.post('/api/usuarios/esqueci-senha', body),
   redefinirSenha: (body) => api.post('/api/usuarios/redefinir-senha', body),
   loginGoogle: (body) => api.post('/api/usuarios/login/google', body),
+  atualizarPerfil: (body) => api.put('/api/usuarios/me', body),
 };
 
 export const restaurantesApi = {
@@ -142,6 +143,8 @@ export const cardapioApi = {
     api.get(`/api/categorias/restaurante/${encodeURIComponent(restauranteId)}`),
   itensPorCategoria: (categoriaId) =>
     api.get(`/api/itens?categoria_id=${encodeURIComponent(categoriaId)}`),
+  criarCategoria: (body) => api.post('/api/categorias', body),
+  criarItem: (body) => api.post('/api/itens', body),
 };
 
 export const pedidosApi = {
@@ -159,4 +162,14 @@ export const pagamentosApi = {
 export const entregadoresApi = {
   statusEntrega: (pedidoId) =>
     api.get(`/api/entregadores/status/${encodeURIComponent(pedidoId)}`),
+  listar: () => api.get('/api/entregadores'),
+  cadastrar: (body) => api.post('/api/entregadores', body),
+  atualizarStatus: (id, ativo) =>
+    api.patch(`/api/entregadores/${encodeURIComponent(id)}`, { ativo }),
+};
+
+// ─── Restaurante (login/cadastro separado) ────────────────────────────────────
+export const restauranteApi = {
+  login: (body) => api.post('/api/usuarios/login', body),
+  cadastro: (body) => api.post('/api/usuarios/register/restaurante', body),
 };
