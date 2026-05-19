@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import imgCarrossel from '@assets/images/imagemCarrossel.png';
 import { LojaHeader } from '@/components/loja/LojaHeader';
 import { LojaBottomNav } from '@/components/loja/LojaBottomNav';
+import { RocketLoader } from '@/components/RocketLoader';
 import { cardapioApi } from '@/services/api';
 import { useCart } from '@/context/CartContext';
 
@@ -30,12 +31,14 @@ function normalizeItens(raw) {
 
 export default function LojaCategoria() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const { addItem } = useCart();
 
   const [itens, setItens] = useState([]);
   const [titulo, setTitulo] = useState('');
   const [carregando, setCarregando] = useState(true);
   const [usandoMock, setUsandoMock] = useState(false);
+  const [adicionados, setAdicionados] = useState({});
 
   useEffect(() => {
     let cancelado = false;
@@ -77,86 +80,97 @@ export default function LojaCategoria() {
     return () => { cancelado = true; };
   }, [id]);
 
-  return (
-    <div className="flex h-screen flex-col overflow-hidden bg-[#E8E8E8]">
+  function handleAdicionar(p) {
+    addItem({ id: p.id, nome: p.nome, preco: p.preco, categoria: id });
+    setAdicionados((prev) => ({ ...prev, [p.id]: true }));
+    setTimeout(() => setAdicionados((prev) => ({ ...prev, [p.id]: false })), 1200);
+  }
 
+  return (
+    <div className="flex h-screen flex-col overflow-hidden bg-gradient-to-b from-[#2D7A4F] to-[#3CB371]">
+
+      {/* Header */}
       <div className="mx-auto w-full max-w-lg shrink-0">
         <LojaHeader />
       </div>
 
-      <div className="flex-1 overflow-y-auto px-4 pb-4 pt-4">
-
-        {carregando ? (
-          <p className="mt-8 text-center text-sm text-zinc-500">Carregando itens…</p>
-        ) : (
-          <>
-            {titulo && (
-              <h1 className="mb-6 text-center text-3xl font-bold">
-                {titulo.toUpperCase()}
-              </h1>
-            )}
-
-            {usandoMock && (
-              <p className="mb-4 text-center text-xs text-zinc-400">
-                Cardápio demo — aguardando microserviço.
-              </p>
-            )}
-
-            {itens.length === 0 ? (
-              <div className="flex flex-col items-center justify-center gap-4 pt-20">
-                <p className="text-lg font-semibold text-zinc-600">
-                  Nenhum item nesta categoria.
-                </p>
-                <Link to="/loja" className="text-[#D02727] underline">
-                  Voltar ao cardápio
-                </Link>
-              </div>
-            ) : (
-              <div className="mx-auto grid max-w-md grid-cols-2 gap-4">
-                {itens.map((p) => (
-                  <div
-                    key={p.id}
-                    className="flex flex-col rounded-[26px] bg-[#D02727] px-2 pb-4 pt-3 shadow-md"
-                  >
-                    <div className="flex flex-1 flex-col gap-2">
-                      <span className="ml-2 text-[22px] font-bold leading-tight text-[#FFA801] sm:text-[26px]">
-                        {p.nome}
-                      </span>
-                      <img
-                        src={p.imagem}
-                        alt=""
-                        className="h-36 w-full rounded-lg object-cover"
-                      />
-                      <p className="text-center text-sm font-semibold text-white">
-                        R$ {p.preco.toFixed(2).replace('.', ',')}
-                      </p>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          addItem({
-                            id: p.id,
-                            nome: p.nome,
-                            preco: p.preco,
-                            categoria: id,
-                          })
-                        }
-                        className="mt-1 rounded-full bg-[#FFA801] py-2 text-sm font-bold text-[#701515]"
-                      >
-                        Adicionar
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </>
+      {/* Título da categoria na faixa verde */}
+      <div className="mx-auto w-full max-w-lg shrink-0 px-4 pb-3">
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => navigate(-1)}
+            className="text-2xl text-white/80 hover:text-white"
+          >
+            ‹
+          </button>
+          {titulo && (
+            <h1 className="text-lg font-bold text-white">{titulo}</h1>
+          )}
+        </div>
+        {usandoMock && (
+          <p className="mt-1 text-xs text-white/60 pl-7">Cardápio demo — aguardando microserviço.</p>
         )}
+      </div>
+
+      {/* Conteúdo branco */}
+      <div className="mx-auto flex w-full max-w-lg flex-1 flex-col overflow-hidden rounded-t-[22px] bg-[#F0F7F1]">
+        <div className="flex-1 overflow-y-auto px-4 pb-4 pt-4">
+
+          {carregando ? (
+            <RocketLoader mensagem="Carregando itens…" />
+          ) : itens.length === 0 ? (
+            <div className="flex flex-col items-center justify-center gap-4 pt-20">
+              <p className="text-lg font-semibold text-zinc-600">Nenhum item nesta categoria.</p>
+              <Link to="/loja" className="text-[#3CB371] underline">Voltar ao cardápio</Link>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-3">
+              {itens.map((p) => (
+                <div
+                  key={p.id}
+                  className="flex flex-col rounded-2xl bg-white shadow-sm overflow-hidden transition hover:shadow-md"
+                >
+                  {/* Imagem */}
+                  <div className="relative h-32 w-full bg-[#E8F5E9]">
+                    <img
+                      src={p.imagem}
+                      alt={p.nome}
+                      className="h-full w-full object-cover"
+                    />
+                  </div>
+
+                  {/* Info */}
+                  <div className="flex flex-1 flex-col gap-2 p-3">
+                    <p className="text-sm font-bold text-zinc-800 leading-tight">{p.nome}</p>
+                    {p.descricao && (
+                      <p className="text-xs text-zinc-400 leading-snug line-clamp-2">{p.descricao}</p>
+                    )}
+                    <p className="text-sm font-semibold text-[#2D7A4F]">
+                      R$ {p.preco.toFixed(2).replace('.', ',')}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => handleAdicionar(p)}
+                      className={`mt-auto w-full rounded-xl py-2 text-sm font-bold transition ${
+                        adicionados[p.id]
+                          ? 'bg-[#2D7A4F] text-white'
+                          : 'bg-[#3CB371] text-white hover:opacity-90'
+                      }`}
+                    >
+                      {adicionados[p.id] ? '✓ Adicionado' : 'Adicionar'}
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="mx-auto w-full max-w-lg shrink-0">
         <LojaBottomNav />
       </div>
-
     </div>
   );
 }

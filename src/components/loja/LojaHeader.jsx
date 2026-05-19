@@ -31,20 +31,20 @@ export function LojaHeader() {
         {/* Logo + nome */}
         <button type="button" onClick={() => navigate('/loja')} className="flex items-center gap-2 shrink-0">
           <img src={logoPequena} alt="PedeFácil" className="h-9 w-9 object-contain" />
-          <span className="text-base font-extrabold tracking-tight text-[#FFA801]">PedeFácil</span>
+          <span className="text-base font-extrabold tracking-tight text-white">PedeFácil</span>
         </button>
 
         {/* Endereço */}
         <button
           type="button"
           onClick={() => navigate('/login')}
-          className="flex flex-1 items-center justify-between rounded-[20px] border-2 border-[#FFA801] bg-[#FF0000]/60 px-3 py-1.5 min-w-0"
+          className="flex flex-1 items-center justify-between rounded-[20px] border-2 border-white/40 bg-white/20 px-3 py-1.5 min-w-0"
         >
-          <span className="text-[#FFA801] text-sm shrink-0">📍</span>
-          <span className="mx-2 flex-1 truncate text-center text-[10px] leading-tight text-[#FFA801]">
+          <span className="text-white text-sm shrink-0">📍</span>
+          <span className="mx-2 flex-1 truncate text-center text-[10px] leading-tight text-white">
             {endereco || 'Definir localização'}
           </span>
-          <span className="text-[#FFA801] text-sm shrink-0">✎</span>
+          <span className="text-white text-sm shrink-0">✎</span>
         </button>
 
         {/* Sino com badge */}
@@ -56,7 +56,7 @@ export function LojaHeader() {
         >
           <span className="text-2xl">🔔</span>
           {naoLidas > 0 && (
-            <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-[#D02727] text-[9px] font-bold text-white">
+            <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-white text-[9px] font-bold text-[#2D7A4F]">
               {naoLidas > 9 ? '9+' : naoLidas}
             </span>
           )}

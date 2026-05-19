@@ -158,7 +158,7 @@ export default function RestauranteCadastro() {
   // ─── Tela de sucesso ───────────────────────────────────────────────────────
   if (sucesso) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center bg-[#636363] px-4 text-center text-[#FFA801]">
+      <div className="flex min-h-screen flex-col items-center justify-center bg-[#0F1E34] px-4 text-center text-[#00C4B4]">
         <span className="text-6xl">✅</span>
         <h2 className="mt-4 text-2xl font-bold">Restaurante cadastrado!</h2>
         <p className="mt-2 text-sm text-white/70">
@@ -167,7 +167,7 @@ export default function RestauranteCadastro() {
         <button
           type="button"
           onClick={() => navigate('/restaurante/login')}
-          className="mt-6 rounded-xl bg-[#FFA801] px-8 py-3 font-semibold text-[#636363]"
+          className="mt-6 rounded-xl bg-[#00C4B4] px-8 py-3 font-semibold text-[#0F1E34]"
         >
           Ir para o login
         </button>
@@ -177,10 +177,10 @@ export default function RestauranteCadastro() {
 
   // ─── Classe padrão dos inputs ──────────────────────────────────────────────
   const inputClass =
-    'h-[38px] w-full rounded-[20px] border-[3px] border-[#FFA801] bg-[#636363] pl-3 text-[#FFA801] placeholder:text-[#FFA801]/60 focus:outline-none focus:ring-2 focus:ring-[#FFA801]/40';
+    'h-[38px] w-full rounded-[20px] border-[3px] border-[#00C4B4] bg-[#1A2B4A] pl-3 text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-[#00C4B4]/40';
 
   return (
-    <div className="flex min-h-screen flex-col items-center bg-[#636363] px-4 pb-12 pt-8 font-sans text-[#FFA801]">
+    <div className="flex min-h-screen flex-col items-center bg-[#0F1E34] px-4 pb-12 pt-8 font-sans text-[#00C4B4]">
 
       <img src={fotoCapa} alt="NeloreBurguer" className="mb-1 h-[100px] w-[180px] object-contain" />
       <p className="mb-6 text-sm font-semibold text-white/80">Cadastro de Restaurante</p>
@@ -188,7 +188,7 @@ export default function RestauranteCadastro() {
       <form onSubmit={handleSubmit} className="flex w-full max-w-[320px] flex-col gap-3">
 
         {/* ── Dados do restaurante ── */}
-        <p className="text-xs font-bold uppercase tracking-wider text-[#FFA801]/70">Dados do restaurante</p>
+        <p className="text-xs font-bold uppercase tracking-wider text-[#00C4B4]/70">Dados do restaurante</p>
 
         <div>
           <input
@@ -228,7 +228,7 @@ export default function RestauranteCadastro() {
         />
 
         {/* ── Acesso ── */}
-        <p className="mt-1 text-xs font-bold uppercase tracking-wider text-[#FFA801]/70">Acesso</p>
+        <p className="mt-1 text-xs font-bold uppercase tracking-wider text-[#00C4B4]/70">Acesso</p>
 
         <div>
           <input
@@ -267,7 +267,7 @@ export default function RestauranteCadastro() {
         </div>
 
         {/* ── Endereço ── */}
-        <p className="mt-1 text-xs font-bold uppercase tracking-wider text-[#FFA801]/70">Endereço</p>
+        <p className="mt-1 text-xs font-bold uppercase tracking-wider text-[#00C4B4]/70">Endereço</p>
 
         <div>
           <input
@@ -344,14 +344,14 @@ export default function RestauranteCadastro() {
         <button
           type="submit"
           disabled={loading}
-          className="mt-2 rounded-xl bg-[#FFA801] py-3 font-semibold text-[#636363] transition hover:opacity-90 disabled:opacity-50"
+          className="mt-2 rounded-xl bg-[#00C4B4] py-3 font-semibold text-[#0F1E34] transition hover:opacity-90 disabled:opacity-50"
         >
           {loading ? 'Cadastrando…' : 'Cadastrar Restaurante'}
         </button>
 
         <p className="text-center text-xs text-white/50">
           Já tem conta?{' '}
-          <Link to="/restaurante/login" className="text-[#FFA801] underline">
+          <Link to="/restaurante/login" className="text-[#00C4B4] underline">
             Fazer login
           </Link>
         </p>

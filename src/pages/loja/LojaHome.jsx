@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { LojaHeader } from '@/components/loja/LojaHeader';
 import { LojaBottomNav } from '@/components/loja/LojaBottomNav';
+import { RocketLoader } from '@/components/RocketLoader';
 import { RESTAURANTES_MOCK } from '@/data/mockCardapio';
 import { restaurantesApi } from '@/services/api';
 
@@ -75,6 +76,12 @@ export default function LojaHome() {
 
   useEffect(() => {
     let cancelado = false;
+
+    // Segurança: após 2s exibe o que tiver (mock já carregado)
+    const timeoutSeguranca = setTimeout(() => {
+      if (!cancelado) setCarregando(false);
+    }, 2000);
+
     async function carregar() {
       try {
         const { data } = await restaurantesApi.listar();
@@ -93,11 +100,12 @@ export default function LojaHome() {
           })));
         }
       } catch { /* mantém mock */ } finally {
+        clearTimeout(timeoutSeguranca);
         if (!cancelado) setCarregando(false);
       }
     }
     carregar();
-    return () => { cancelado = true; };
+    return () => { cancelado = true; clearTimeout(timeoutSeguranca); };
   }, []);
 
   function abrirRestaurante(restaurante) {
@@ -111,7 +119,7 @@ export default function LojaHome() {
   );
 
   return (
-    <div className="flex h-screen flex-col overflow-hidden bg-gradient-to-b from-[#701515] to-[#D02727]">
+    <div className="flex h-screen flex-col overflow-hidden bg-gradient-to-b from-[#2D7A4F] to-[#3CB371]">
 
       <div className="mx-auto w-full max-w-lg shrink-0">
         <LojaHeader />
@@ -124,33 +132,39 @@ export default function LojaHome() {
           placeholder="🔍  Buscar restaurante..."
           value={busca}
           onChange={(e) => setBusca(e.target.value)}
-          className="w-full rounded-2xl border-2 border-white/20 bg-white/10 px-4 py-2.5 text-sm text-white placeholder:text-white/50 focus:border-[#FFA801]/60 focus:outline-none"
+          className="w-full rounded-2xl border-2 border-white/30 bg-white/20 px-4 py-2.5 text-sm text-white placeholder:text-white/60 focus:border-white/60 focus:outline-none"
         />
       </div>
 
       {/* Lista */}
-      <div className="mx-auto flex w-full max-w-lg flex-1 flex-col overflow-hidden rounded-t-[22px] bg-[#E8E8E8]">
+      <div className="mx-auto flex w-full max-w-lg flex-1 flex-col overflow-hidden rounded-t-[22px] bg-[#F0F7F1]">
         <div className="flex-1 overflow-y-auto px-4 pt-4 pb-4">
 
-          <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-400">
-            {carregando ? 'Carregando…' : `${filtrados.length} restaurante${filtrados.length !== 1 ? 's' : ''} disponível${filtrados.length !== 1 ? 'is' : ''}`}
-          </p>
-
-          {filtrados.length === 0 && !carregando ? (
-            <div className="mt-10 text-center text-zinc-400">
-              <p className="text-4xl">🍽️</p>
-              <p className="mt-2 text-sm">Nenhum restaurante encontrado.</p>
-            </div>
+          {carregando ? (
+            <RocketLoader mensagem="Buscando restaurantes…" />
           ) : (
-            <div className="flex flex-col gap-3">
-              {filtrados.map((r) => (
-                <CardRestaurante
-                  key={r.id}
-                  restaurante={r}
-                  onClick={() => abrirRestaurante(r)}
-                />
-              ))}
-            </div>
+            <>
+              <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-400">
+                {`${filtrados.length} restaurante${filtrados.length !== 1 ? 's' : ''} disponível${filtrados.length !== 1 ? 'is' : ''}`}
+              </p>
+
+              {filtrados.length === 0 ? (
+                <div className="mt-10 text-center text-zinc-400">
+                  <p className="text-4xl">🍽️</p>
+                  <p className="mt-2 text-sm">Nenhum restaurante encontrado.</p>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-3">
+                  {filtrados.map((r) => (
+                    <CardRestaurante
+                      key={r.id}
+                      restaurante={r}
+                      onClick={() => abrirRestaurante(r)}
+                    />
+                  ))}
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>

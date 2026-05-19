@@ -1,6 +1,8 @@
 import { AuthNavigationBridge } from "@/components/AuthNavigationBridge";
+import { PageTransition } from "@/components/PageTransition";
 import { CartProvider } from "@/context/CartContext";
 import AdminAccess from "@/pages/AdminAccess";
+import NotFound from "@/pages/NotFound";
 import Cadastro from "@/pages/Cadastro";
 import EsqueciSenha from "@/pages/EsqueciSenha";
 import HomePlaceholder from "@/pages/HomePlaceholder";
@@ -19,6 +21,7 @@ import RestauranteCadastro from "@/pages/restaurante/RestauranteCadastro";
 import RestauranteDashboard from "@/pages/restaurante/RestauranteDashboard";
 import RestauranteEntregadores from "@/pages/restaurante/RestauranteEntregadores";
 import RestauranteCardapio from "@/pages/restaurante/RestauranteCardapio";
+import RestaurantePerfil from "@/pages/restaurante/RestaurantePerfil";
 import RestauranteLogin from "@/pages/restaurante/RestauranteLogin";
 import { getStoredToken } from "@/services/api";
 import { BrowserRouter, Navigate, Outlet, Route, Routes } from "react-router-dom";
@@ -51,6 +54,7 @@ export default function App() {
     <BrowserRouter>
       <AuthNavigationBridge />
       <CartProvider>
+        <PageTransition>
         <Routes>
           {/* ── Login unificado (toggle usuário / restaurante) ── */}
           <Route path="/" element={<LoginPage />} />
@@ -67,6 +71,7 @@ export default function App() {
           {/* ── Restaurante (autenticado) ── */}
           <Route element={<RequireAuth />}>
             <Route path="/restaurante/dashboard" element={<RestauranteDashboard />} />
+            <Route path="/restaurante/perfil" element={<RestaurantePerfil />} />
             <Route path="/restaurante/entregadores" element={<RestauranteEntregadores />} />
             <Route path="/restaurante/cardapio" element={<RestauranteCardapio />} />
           </Route>
@@ -85,7 +90,11 @@ export default function App() {
               <Route path="perfil" element={<LojaPerfil />} />
             </Route>
           </Route>
+
+          {/* ── 404 — foguete explode ── */}
+          <Route path="*" element={<NotFound />} />
         </Routes>
+      </PageTransition>
       </CartProvider>
     </BrowserRouter>
   );

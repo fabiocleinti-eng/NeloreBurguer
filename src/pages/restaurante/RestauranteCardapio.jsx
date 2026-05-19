@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { RocketLoader } from '@/components/RocketLoader';
 import { cardapioApi } from '@/services/api';
 
 // ─── Tabs ────────────────────────────────────────────────────────────────────
@@ -11,10 +12,10 @@ export default function RestauranteCardapio() {
   const [tab, setTab] = useState('Categorias');
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#636363] font-sans text-[#FFA801]">
+    <div className="flex min-h-screen flex-col bg-[#0F1E34] font-sans">
 
       {/* Header */}
-      <header className="flex items-center gap-3 bg-[#701515] px-5 py-4 shadow">
+      <header className="flex items-center gap-3 bg-[#1A2B4A] px-5 py-4 shadow">
         <button type="button" onClick={() => navigate('/restaurante/dashboard')} className="text-white text-xl">‹</button>
         <h1 className="text-lg font-bold text-white">Cardápio</h1>
       </header>
@@ -26,7 +27,7 @@ export default function RestauranteCardapio() {
             key={t}
             type="button"
             onClick={() => setTab(t)}
-            className={`flex-1 rounded-xl py-2 text-sm font-semibold transition ${tab === t ? 'bg-[#FFA801] text-[#636363]' : 'border border-[#FFA801]/40 text-[#FFA801]/70 hover:border-[#FFA801]'}`}
+            className={`flex-1 rounded-xl py-2 text-sm font-semibold transition ${tab === t ? 'bg-[#00C4B4] text-[#0F1E34]' : 'border border-[#00C4B4]/40 text-[#00C4B4]/70 hover:border-[#00C4B4]'}`}
           >
             {t}
           </button>
@@ -97,7 +98,7 @@ function TabCategorias() {
   }
 
   const inputClass =
-    'h-[38px] w-full rounded-[20px] border-[3px] border-[#FFA801] bg-[#636363] pl-3 text-[#FFA801] placeholder:text-[#FFA801]/60 focus:outline-none focus:ring-2 focus:ring-[#FFA801]/40';
+    'h-[38px] w-full rounded-[20px] border-[3px] border-[#00C4B4] bg-[#1A2B4A] pl-3 text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-[#00C4B4]/40';
 
   return (
     <div className="flex flex-col gap-3">
@@ -107,13 +108,13 @@ function TabCategorias() {
 
       {!abrirForm && (
         <button type="button" onClick={() => { setAbrirForm(true); setErros({}); }}
-          className="w-full rounded-xl bg-[#FFA801] py-3 font-semibold text-[#636363] hover:opacity-90">
+          className="w-full rounded-xl bg-[#00C4B4] py-3 font-semibold text-[#0F1E34] hover:opacity-90">
           + Nova Categoria
         </button>
       )}
 
       {abrirForm && (
-        <form onSubmit={handleSalvar} className="flex flex-col gap-3 rounded-2xl border-2 border-[#FFA801]/40 bg-black/20 p-5">
+        <form onSubmit={handleSalvar} className="flex flex-col gap-3 rounded-2xl border-2 border-[#00C4B4]/40 bg-[#1A2B4A]/60 p-5">
           <p className="font-bold text-white">Nova Categoria</p>
           <div>
             <input placeholder="Título *" value={form.titulo} onChange={(e) => set('titulo', e.target.value)} className={inputClass} />
@@ -126,7 +127,7 @@ function TabCategorias() {
             <button type="button" onClick={() => { setAbrirForm(false); setErros({}); }}
               className="flex-1 rounded-xl border-2 border-white/30 py-2 text-sm text-white/70">Cancelar</button>
             <button type="submit" disabled={salvando}
-              className="flex-1 rounded-xl bg-[#FFA801] py-2 font-semibold text-[#636363] disabled:opacity-50">
+              className="flex-1 rounded-xl bg-[#00C4B4] py-2 font-semibold text-[#0F1E34] disabled:opacity-50">
               {salvando ? 'Salvando…' : 'Salvar'}
             </button>
           </div>
@@ -134,7 +135,7 @@ function TabCategorias() {
       )}
 
       {carregando ? (
-        <p className="text-center text-sm text-white/50">Carregando…</p>
+        <RocketLoader mensagem="Carregando categorias…" />
       ) : categorias.length === 0 ? (
         <div className="rounded-2xl border border-white/20 bg-white/5 px-4 py-8 text-center">
           <p className="text-3xl">📋</p>
@@ -142,10 +143,10 @@ function TabCategorias() {
         </div>
       ) : (
         categorias.map((cat) => (
-          <div key={cat.id} className="flex items-center justify-between rounded-2xl border border-[#FFA801]/30 bg-black/20 px-4 py-4">
+          <div key={cat.id} className="flex items-center justify-between rounded-2xl border border-[#00C4B4]/30 bg-[#1A2B4A]/60 px-4 py-4">
             <div>
               <p className="font-semibold text-white">{cat.titulo || cat.nome}</p>
-              {cat.destaque && <p className="text-xs text-[#FFA801]/70">{cat.destaque}</p>}
+              {cat.destaque && <p className="text-xs text-[#00C4B4]/80">{cat.destaque}</p>}
               {cat.descricao && <p className="text-xs text-white/40">{cat.descricao}</p>}
             </div>
           </div>
@@ -239,7 +240,7 @@ function TabItens() {
   }
 
   const inputClass =
-    'h-[38px] w-full rounded-[20px] border-[3px] border-[#FFA801] bg-[#636363] pl-3 text-[#FFA801] placeholder:text-[#FFA801]/60 focus:outline-none focus:ring-2 focus:ring-[#FFA801]/40';
+    'h-[38px] w-full rounded-[20px] border-[3px] border-[#00C4B4] bg-[#1A2B4A] pl-3 text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-[#00C4B4]/40';
 
   return (
     <div className="flex flex-col gap-3">
@@ -249,13 +250,13 @@ function TabItens() {
 
       {!abrirForm && (
         <button type="button" onClick={() => { setAbrirForm(true); setErros({}); }}
-          className="w-full rounded-xl bg-[#FFA801] py-3 font-semibold text-[#636363] hover:opacity-90">
+          className="w-full rounded-xl bg-[#00C4B4] py-3 font-semibold text-[#0F1E34] hover:opacity-90">
           + Novo Item
         </button>
       )}
 
       {abrirForm && (
-        <form onSubmit={handleSalvar} className="flex flex-col gap-3 rounded-2xl border-2 border-[#FFA801]/40 bg-black/20 p-5">
+        <form onSubmit={handleSalvar} className="flex flex-col gap-3 rounded-2xl border-2 border-[#00C4B4]/40 bg-[#1A2B4A]/60 p-5">
           <p className="font-bold text-white">Novo Item</p>
 
           <div>
@@ -279,7 +280,7 @@ function TabItens() {
             <select
               value={form.categoriaId}
               onChange={(e) => set('categoriaId', e.target.value)}
-              className="h-[38px] w-full rounded-[20px] border-[3px] border-[#FFA801] bg-[#636363] pl-3 text-[#FFA801] focus:outline-none focus:ring-2 focus:ring-[#FFA801]/40"
+              className="h-[38px] w-full rounded-[20px] border-[3px] border-[#00C4B4] bg-[#1A2B4A] pl-3 text-white focus:outline-none focus:ring-2 focus:ring-[#00C4B4]/40"
             >
               <option value="">Selecione a categoria *</option>
               {categorias.map((cat) => (
@@ -294,7 +295,7 @@ function TabItens() {
               type="checkbox"
               checked={form.disponivel}
               onChange={(e) => set('disponivel', e.target.checked)}
-              className="accent-[#FFA801]"
+              className="accent-[#00C4B4]"
             />
             Disponível no cardápio
           </label>
@@ -305,7 +306,7 @@ function TabItens() {
             <button type="button" onClick={() => { setAbrirForm(false); setErros({}); }}
               className="flex-1 rounded-xl border-2 border-white/30 py-2 text-sm text-white/70">Cancelar</button>
             <button type="submit" disabled={salvando}
-              className="flex-1 rounded-xl bg-[#FFA801] py-2 font-semibold text-[#636363] disabled:opacity-50">
+              className="flex-1 rounded-xl bg-[#00C4B4] py-2 font-semibold text-[#0F1E34] disabled:opacity-50">
               {salvando ? 'Salvando…' : 'Salvar'}
             </button>
           </div>
@@ -313,7 +314,7 @@ function TabItens() {
       )}
 
       {carregando ? (
-        <p className="text-center text-sm text-white/50">Carregando…</p>
+        <RocketLoader mensagem="Carregando itens…" />
       ) : itens.length === 0 ? (
         <div className="rounded-2xl border border-white/20 bg-white/5 px-4 py-8 text-center">
           <p className="text-3xl">🍔</p>
@@ -321,14 +322,14 @@ function TabItens() {
         </div>
       ) : (
         itens.map((item) => (
-          <div key={item.id} className="flex items-center justify-between rounded-2xl border border-[#FFA801]/30 bg-black/20 px-4 py-4">
+          <div key={item.id} className="flex items-center justify-between rounded-2xl border border-[#00C4B4]/30 bg-[#1A2B4A]/60 px-4 py-4">
             <div className="flex-1">
               <p className="font-semibold text-white">{item.nome || item.name}</p>
-              <p className="text-xs text-[#FFA801]/70">{item._categoriaTitulo}</p>
+              <p className="text-xs text-[#00C4B4]/80">{item._categoriaTitulo}</p>
               {item.descricao && <p className="text-xs text-white/40">{item.descricao}</p>}
             </div>
             <div className="text-right">
-              <p className="font-bold text-[#FFA801]">
+              <p className="font-bold text-[#00C4B4]">
                 R$ {((item.preco_centavos ?? item.precoCentavos ?? 0) / 100).toFixed(2).replace('.', ',')}
               </p>
               <p className={`text-xs ${item.disponivel ? 'text-green-400' : 'text-red-400'}`}>

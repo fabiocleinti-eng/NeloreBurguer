@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import fotoCapa from '@assets/images/fotoCapa.png';
 import batata from '@assets/images/batata.png';
 import hamburguer from '@assets/images/hamburguer.png';
 import { TOKEN_KEY, persistTokenFromResponse, usuariosApi, restauranteApi } from '@/services/api';
@@ -31,7 +30,7 @@ function FormUsuario() {
   const [erro, setErro] = useState('');
 
   const inputClass =
-    'h-[38px] rounded-[20px] border-[3px] border-[#FFA801] bg-[#636363] pl-3 text-[#FFA801] placeholder:text-[#FFA801]/70 focus:outline-none focus:ring-2 focus:ring-[#FFA801]/40';
+    'h-[42px] w-full rounded-[20px] border-[3px] border-[#3CB371] bg-white/80 pl-4 text-zinc-800 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#3CB371]/40';
 
   async function handleLogin(e) {
     e.preventDefault();
@@ -58,31 +57,31 @@ function FormUsuario() {
         <input type="password" autoComplete="current-password" placeholder="Senha"
           value={senha} onChange={(e) => setSenha(e.target.value)} className={inputClass} />
 
-        {erro && <p className="text-center text-sm text-red-300" role="alert">{erro}</p>}
+        {erro && <p className="text-center text-sm text-red-500" role="alert">{erro}</p>}
 
         <div className="flex items-center justify-between pt-1">
-          <Link to="/cadastro" className="text-[#FFA801] underline">Cadastrar</Link>
+          <Link to="/cadastro" className="text-white underline text-sm hover:text-white/80">Cadastrar</Link>
           <button type="submit" disabled={loading}
-            className="rounded-lg bg-[#FFA801] px-5 py-2 font-semibold text-[#636363] hover:opacity-90 disabled:opacity-50">
+            className="rounded-xl bg-white px-6 py-2 font-semibold text-[#2D7A4F] hover:opacity-90 disabled:opacity-50">
             {loading ? 'Entrando…' : 'Entrar'}
           </button>
         </div>
       </form>
 
+      <div className="flex justify-center">
+        <Link to="/esqueci-senha" className="text-xs text-white/70 underline hover:text-white">
+          Esqueceu a senha?
+        </Link>
+      </div>
+
       {/* Dev bypass */}
       {DEV_BYPASS && (
         <button type="button"
           onClick={() => { sessionStorage.setItem(TOKEN_KEY, gerarTokenFake('USER')); navigate('/home', { replace: true }); }}
-          className="mt-1 w-full rounded-lg border-2 border-dashed border-yellow-400/60 bg-yellow-400/10 py-2 text-xs font-semibold text-yellow-300 hover:bg-yellow-400/20">
+          className="mt-1 w-full rounded-lg border-2 border-dashed border-white/40 bg-white/15 py-2 text-xs font-semibold text-white hover:bg-white/25">
           ⚠️ Modo dev — entrar sem backend
         </button>
       )}
-
-      <div className="mt-2 flex flex-col items-center">
-        <Link to="/esqueci-senha" className="text-xs text-[#FFA801]/70 underline hover:text-[#FFA801]">
-          Esqueceu a senha?
-        </Link>
-      </div>
     </div>
   );
 }
@@ -96,7 +95,7 @@ function FormRestaurante() {
   const [erro, setErro] = useState('');
 
   const inputClass =
-    'h-[38px] rounded-[20px] border-[3px] border-[#FFA801] bg-[#636363] pl-3 text-[#FFA801] placeholder:text-[#FFA801]/70 focus:outline-none focus:ring-2 focus:ring-[#FFA801]/40';
+    'h-[42px] w-full rounded-[20px] border-[3px] border-[#00C4B4] bg-[#1A2B4A] pl-4 text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-[#00C4B4]/40';
 
   async function handleLogin(e) {
     e.preventDefault();
@@ -126,30 +125,30 @@ function FormRestaurante() {
         {erro && <p className="text-center text-sm text-red-300" role="alert">{erro}</p>}
 
         <div className="flex items-center justify-between pt-1">
-          <Link to="/restaurante/cadastro" className="text-[#FFA801] underline">
+          <Link to="/restaurante/cadastro" className="text-[#00C4B4] underline text-sm">
             Cadastrar restaurante
           </Link>
           <button type="submit" disabled={loading}
-            className="rounded-lg bg-[#FFA801] px-5 py-2 font-semibold text-[#636363] hover:opacity-90 disabled:opacity-50">
+            className="rounded-xl bg-[#00C4B4] px-6 py-2 font-semibold text-[#0F1E34] hover:opacity-90 disabled:opacity-50">
             {loading ? 'Entrando…' : 'Entrar'}
           </button>
         </div>
       </form>
 
+      <div className="flex justify-center">
+        <Link to="/esqueci-senha" className="text-xs text-[#00C4B4]/70 underline hover:text-[#00C4B4]">
+          Esqueceu a senha?
+        </Link>
+      </div>
+
       {/* Dev bypass */}
       {DEV_BYPASS && (
         <button type="button"
           onClick={() => { sessionStorage.setItem(TOKEN_KEY, gerarTokenFake('RESTAURANTE')); navigate('/restaurante/dashboard', { replace: true }); }}
-          className="mt-1 w-full rounded-lg border-2 border-dashed border-yellow-400/60 bg-yellow-400/10 py-2 text-xs font-semibold text-yellow-300 hover:bg-yellow-400/20">
+          className="mt-1 w-full rounded-lg border-2 border-dashed border-[#00C4B4]/40 bg-[#00C4B4]/10 py-2 text-xs font-semibold text-[#00C4B4] hover:bg-[#00C4B4]/20">
           ⚠️ Modo dev — entrar sem backend
         </button>
       )}
-
-      <div className="mt-2 flex flex-col items-center">
-        <Link to="/esqueci-senha" className="text-xs text-[#FFA801]/70 underline hover:text-[#FFA801]">
-          Esqueceu a senha?
-        </Link>
-      </div>
     </div>
   );
 }
@@ -164,10 +163,12 @@ function PinIcon({ className }) {
 }
 
 // ─── Componente de localização ────────────────────────────────────────────────
-function LocalizacaoAtual() {
+function LocalizacaoAtual({ modo }) {
   const [endereco, setEndereco] = useState('');
-  const [status, setStatus] = useState('idle'); // idle | loading | ok | manual
+  const [status, setStatus] = useState('idle');
   const [editando, setEditando] = useState(false);
+
+  const cor = modo === 'usuario' ? '#3CB371' : '#00C4B4';
 
   function salvarEndereco(display, dados) {
     try {
@@ -178,7 +179,6 @@ function LocalizacaoAtual() {
     setStatus('ok');
   }
 
-  // ── 1. Tenta GPS do navegador ────────────────────────────────────────────
   async function reverseGeocode(lat, lon) {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 8000);
@@ -207,7 +207,6 @@ function LocalizacaoAtual() {
     }
   }
 
-  // ── 2. Fallback: localização por IP (sem permissão) ──────────────────────
   async function localizacaoPorIP() {
     const apis = [
       async () => {
@@ -231,16 +230,10 @@ function LocalizacaoAtual() {
 
     for (const api of apis) {
       try {
-        const ctrl = new AbortController();
-        const timer = setTimeout(() => ctrl.abort(), 5000);
         const resultado = await api();
-        clearTimeout(timer);
         if (resultado.cidade) {
           const display = [resultado.cidade, resultado.uf].filter(Boolean).join(', ');
-          return {
-            display,
-            dados: { rua: '', numero: '', bairro: '', ...resultado },
-          };
+          return { display, dados: { rua: '', numero: '', bairro: '', ...resultado } };
         }
       } catch { /* tenta próxima */ }
     }
@@ -249,79 +242,56 @@ function LocalizacaoAtual() {
 
   async function buscarLocalizacao() {
     setStatus('loading');
-
-    // Tenta GPS primeiro
     if (navigator.geolocation) {
       await new Promise((resolve) => {
         navigator.geolocation.getCurrentPosition(
           async ({ coords }) => {
             const resultado = await reverseGeocode(coords.latitude, coords.longitude);
-            if (resultado) {
-              salvarEndereco(resultado.display, resultado.dados);
-            } else {
-              setStatus('manual');
-            }
+            if (resultado) salvarEndereco(resultado.display, resultado.dados);
+            else setStatus('manual');
             resolve();
           },
-          async (gpsErr) => {
-            // GPS falhou — tenta IP
-            if (DEV_BYPASS) console.warn('[Localização] GPS falhou, código:', gpsErr?.code, gpsErr?.message);
+          async () => {
             const resultado = await localizacaoPorIP();
-            if (DEV_BYPASS) console.info('[Localização] IP resultado:', resultado);
-            if (resultado) {
-              salvarEndereco(resultado.display, resultado.dados);
-            } else {
-              setStatus('manual');
-            }
+            if (resultado) salvarEndereco(resultado.display, resultado.dados);
+            else setStatus('manual');
             resolve();
           },
           { timeout: 8000, maximumAge: 30000, enableHighAccuracy: false }
         );
       });
     } else {
-      // Sem suporte a GPS — tenta IP direto
       const resultado = await localizacaoPorIP();
-      if (resultado) {
-        salvarEndereco(resultado.display, resultado.dados);
-      } else {
-        setStatus('manual');
-      }
+      if (resultado) salvarEndereco(resultado.display, resultado.dados);
+      else setStatus('manual');
     }
   }
 
-  // ── idle: botão para ativar ──
   if (status === 'idle') {
     return (
-      <button
-        type="button"
-        onClick={buscarLocalizacao}
-        className="mt-4 flex items-center gap-1.5 text-sm text-[#FFA801]/70 underline hover:text-[#FFA801] transition"
-      >
-        <PinIcon className="h-4 w-4 text-red-400" />
+      <button type="button" onClick={buscarLocalizacao}
+        className="mt-4 flex items-center gap-1.5 text-sm text-white/80 underline transition hover:text-white">
+        <PinIcon className="h-4 w-4 text-white" />
         Usar minha localização
       </button>
     );
   }
 
-  // ── loading ──
   if (status === 'loading') {
     return (
-      <p className="mt-4 flex items-center gap-1.5 text-sm text-white/50">
-        <PinIcon className="h-4 w-4 text-red-400 animate-pulse" />
+      <p className="mt-4 flex items-center gap-1.5 text-sm text-white/70">
+        <PinIcon className="h-4 w-4 text-white animate-pulse" />
         Obtendo localização…
       </p>
     );
   }
 
-  // ── manual: GPS falhou, campo para digitar ──
   if (status === 'manual') {
     return (
       <div className="mt-4 flex w-full max-w-[300px] flex-col gap-1">
-        <p className="text-center text-xs text-white/40">
-          GPS indisponível — digite seu bairro ou cidade:
-        </p>
+        <p className="text-center text-xs text-white/70">GPS indisponível — digite seu bairro ou cidade:</p>
         <div className="flex items-center gap-2">
-          <PinIcon className="h-4 w-4 shrink-0 text-red-400" />
+          <PinIcon className="h-4 w-4 shrink-0 text-white" />
           <input
             type="text"
             placeholder="Ex: Bairro, Cidade"
@@ -334,18 +304,17 @@ function LocalizacaoAtual() {
               }
             }}
             autoFocus
-            className="h-[32px] flex-1 rounded-full border border-[#FFA801]/40 bg-transparent px-3 text-xs text-[#FFA801] placeholder:text-[#FFA801]/40 focus:outline-none focus:border-[#FFA801]"
+            className="h-[32px] flex-1 rounded-full border border-white/40 bg-white/15 px-3 text-xs text-white placeholder:text-white/50 focus:outline-none focus:border-white/70"
           />
         </div>
       </div>
     );
   }
 
-  // ── ok: exibe endereço com opção de editar ──
   if (editando) {
     return (
       <div className="mt-4 flex w-full max-w-[300px] items-center gap-2">
-        <PinIcon className="h-4 w-4 shrink-0 text-red-500" />
+        <PinIcon className="h-4 w-4 shrink-0 text-white" />
         <input
           type="text"
           value={endereco}
@@ -355,67 +324,73 @@ function LocalizacaoAtual() {
             setEditando(false);
           }}
           autoFocus
-          className="h-[32px] flex-1 rounded-full border border-[#FFA801]/60 bg-transparent px-3 text-xs text-[#FFA801] focus:outline-none focus:border-[#FFA801]"
+          className="h-[32px] flex-1 rounded-full border border-white/50 bg-white/15 px-3 text-xs text-white focus:outline-none focus:border-white/80"
         />
       </div>
     );
   }
 
   return (
-    <div className="mt-4 flex max-w-[280px] items-start gap-1.5 text-[13px] text-[#FFA801]">
-      <PinIcon className="mt-0.5 h-4 w-4 shrink-0 text-red-500" />
+    <div className="mt-4 flex max-w-[280px] items-start gap-1.5 text-[13px] text-white">
+      <PinIcon className="mt-0.5 h-4 w-4 shrink-0 text-white" />
       <span className="line-clamp-2 flex-1">{endereco || 'Localização obtida ✓'}</span>
-      <button
-        type="button"
-        onClick={() => setEditando(true)}
-        title="Editar endereço"
-        className="ml-1 shrink-0 text-[#FFA801]/60 hover:text-[#FFA801] transition"
-      >
-        ✏️
-      </button>
+      <button type="button" onClick={() => setEditando(true)} title="Editar endereço"
+        className="ml-1 shrink-0 transition hover:opacity-80">✏️</button>
     </div>
   );
 }
 
 // ─── Página principal ─────────────────────────────────────────────────────────
 export default function LoginPage() {
-  const [modo, setModo] = useState('usuario'); // 'usuario' | 'restaurante'
+  const [modo, setModo] = useState('usuario');
+
+  const isUsuario = modo === 'usuario';
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-[#636363] px-4 pb-10 pt-8 font-sans text-[13px] text-[#FFA801]">
-
-      {/* Logo */}
-      <img src={fotoCapa} alt="NeloreBurguer"
-        className="mb-5 h-[130px] w-[230px] max-w-full object-contain" />
+    <div
+      className="flex min-h-screen flex-col items-center justify-center px-4 pb-10 pt-8 font-sans text-[13px] transition-colors duration-300"
+      style={{ background: isUsuario ? 'linear-gradient(to bottom, #2D7A4F, #3CB371)' : 'linear-gradient(to bottom, #0F1E34, #1A2B4A)' }}
+    >
+      {/* Logo PedeFácil */}
+      <div className="mb-6 flex flex-col items-center gap-1">
+        <span className="text-5xl" style={{ filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.3))' }}>🚀</span>
+        <h1 className="text-3xl font-extrabold tracking-tight text-white drop-shadow-md">
+          Pede<span className="text-white/75">Fácil</span>
+        </h1>
+        <p className="text-xs text-white/55 tracking-wide">Peça rápido, receba fácil</p>
+      </div>
 
       {/* Toggle */}
-      <div className="mb-6 flex w-full max-w-[300px] rounded-full border-2 border-[#FFA801] p-1">
+      <div
+        className="mb-6 flex w-full max-w-[300px] rounded-full border-2 p-1 transition-colors duration-300"
+        style={{ borderColor: isUsuario ? '#3CB371' : '#00C4B4' }}
+      >
         <button
           type="button"
           onClick={() => setModo('usuario')}
-          className={`flex-1 rounded-full py-1.5 text-sm font-semibold transition-all duration-200 ${
-            modo === 'usuario'
-              ? 'bg-[#FFA801] text-[#636363]'
-              : 'text-[#FFA801]/60 hover:text-[#FFA801]'
-          }`}
+          className="flex-1 rounded-full py-1.5 text-sm font-semibold transition-all duration-200"
+          style={isUsuario
+            ? { background: '#3CB371', color: '#fff' }
+            : { color: '#ffffff60' }
+          }
         >
           🛍️ Usuário
         </button>
         <button
           type="button"
           onClick={() => setModo('restaurante')}
-          className={`flex-1 rounded-full py-1.5 text-sm font-semibold transition-all duration-200 ${
-            modo === 'restaurante'
-              ? 'bg-[#FFA801] text-[#636363]'
-              : 'text-[#FFA801]/60 hover:text-[#FFA801]'
-          }`}
+          className="flex-1 rounded-full py-1.5 text-sm font-semibold transition-all duration-200"
+          style={!isUsuario
+            ? { background: '#00C4B4', color: '#0F1E34' }
+            : { color: '#ffffff60' }
+          }
         >
           🏪 Restaurante
         </button>
       </div>
 
       {/* Formulário conforme modo */}
-      {modo === 'usuario' ? <FormUsuario /> : <FormRestaurante />}
+      {isUsuario ? <FormUsuario /> : <FormRestaurante />}
 
       {/* Imagens decorativas */}
       <div className="mt-12 flex flex-row items-center justify-around gap-8">
@@ -424,8 +399,7 @@ export default function LoginPage() {
       </div>
 
       {/* Localização atual */}
-      <LocalizacaoAtual />
-
+      <LocalizacaoAtual modo={modo} />
     </div>
   );
 }

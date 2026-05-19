@@ -21,8 +21,8 @@ function tempoRelativo(iso) {
 
 const ICONE_TIPO = { PEDIDO: '🛵', CUPOM: '🎁', INFO: 'ℹ️' };
 const COR_TIPO   = {
-  PEDIDO: 'border-l-[#D02727]',
-  CUPOM:  'border-l-[#FFA801]',
+  PEDIDO: 'border-l-[#3CB371]',
+  CUPOM:  'border-l-amber-400',
   INFO:   'border-l-blue-400',
 };
 
@@ -86,7 +86,7 @@ export function NotificacoesPanel({ aberto, onFechar, onAtualizar }) {
         style={{ animation: 'slideInRight .2s ease' }}
       >
         {/* Header do painel */}
-        <div className="flex items-center justify-between bg-[#701515] px-4 py-4">
+        <div className="flex items-center justify-between bg-[#2D7A4F] px-4 py-4">
           <h2 className="text-base font-bold text-white">🔔 Notificações</h2>
           <button type="button" onClick={onFechar} className="text-white/70 hover:text-white text-xl">✕</button>
         </div>
@@ -95,7 +95,7 @@ export function NotificacoesPanel({ aberto, onFechar, onAtualizar }) {
         {lista.length > 0 && (
           <div className="flex items-center justify-between border-b border-zinc-100 px-4 py-2">
             <button type="button" onClick={handleMarcarTodas}
-              className="text-xs text-[#D02727] underline hover:opacity-80">
+              className="text-xs text-[#3CB371] underline hover:opacity-80">
               Marcar todas como lidas
             </button>
             <button type="button" onClick={handleLimpar}
@@ -132,7 +132,7 @@ export function NotificacoesPanel({ aberto, onFechar, onAtualizar }) {
                       {n.titulo}
                     </p>
                     {!n.lida && (
-                      <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-[#D02727]" />
+                      <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-[#3CB371]" />
                     )}
                   </div>
                   <p className="mt-0.5 text-xs text-zinc-500 leading-snug">{n.mensagem}</p>

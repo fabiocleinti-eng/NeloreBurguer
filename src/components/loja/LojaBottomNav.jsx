@@ -2,7 +2,7 @@ import { NavLink } from 'react-router-dom';
 
 const linkClass = ({ isActive }) =>
   `flex flex-col items-center justify-center gap-0.5 min-w-[60px] ${
-    isActive ? 'text-red-600' : 'text-[#FFA801]'
+    isActive ? 'text-[#2D7A4F]' : 'text-zinc-400'
   }`;
 
 export function LojaBottomNav() {

@@ -1,16 +1,26 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import fotoCapa from '@assets/images/fotoCapa.png';
 import { persistTokenFromResponse, restauranteApi } from '@/services/api';
 
 const DEV_BYPASS = import.meta.env.VITE_DEV_BYPASS === 'true';
 
+/** Extrai o ID do restaurante do payload JWT */
+function extrairRestauranteIdDoToken(token) {
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    return payload.restauranteId || payload.restaurante_id || payload.id || payload.sub || null;
+  } catch {
+    return null;
+  }
+}
+
 function gerarTokenRestauranteFake() {
   const header = btoa(JSON.stringify({ alg: 'HS256', typ: 'JWT' }));
   const payload = btoa(JSON.stringify({
-    sub: 'dev-restaurante',
-    id: 'dev-restaurante',
-    nome: 'Restaurante Demo',
+    sub: 'dev-restaurante-001',
+    id: 'dev-restaurante-001',
+    restauranteId: 'dev-restaurante-001',
+    nome: 'Nelore Burger',
     email: 'demo@restaurante.local',
     role: 'RESTAURANTE',
     exp: Math.floor(Date.now() / 1000) + 60 * 60 * 8,
@@ -43,6 +53,10 @@ export default function RestauranteLogin() {
         setErro('Login OK, mas o servidor não enviou um token. Contacte o suporte.');
         return;
       }
+      // Salva o ID do restaurante para uso em todo o painel
+      const restId = extrairRestauranteIdDoToken(token)
+        || data?.restauranteId || data?.restaurante?.id || data?.id;
+      if (restId) sessionStorage.setItem('nelore_restaurante_id', restId);
       navigate('/restaurante/dashboard', { replace: true });
     } catch (err) {
       const msg =
@@ -57,15 +71,16 @@ export default function RestauranteLogin() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-[#636363] px-4 pb-10 pt-8 font-sans text-[#FFA801]">
+    <div className="flex min-h-screen flex-col items-center justify-center bg-[#0F1E34] px-4 pb-10 pt-8 font-sans">
 
-      {/* Logo */}
-      <img
-        src={fotoCapa}
-        alt="NeloreBurguer"
-        className="mb-2 h-[120px] w-[210px] object-contain"
-      />
-      <p className="mb-6 text-sm font-semibold text-white/80">Área do Restaurante</p>
+      {/* Logo PedeFácil */}
+      <div className="mb-1 flex items-center gap-3">
+        <span className="text-5xl">🚀</span>
+        <span className="text-4xl font-extrabold tracking-tight text-white">
+          Pede<span className="text-[#00C4B4]">Fácil</span>
+        </span>
+      </div>
+      <p className="mb-6 text-sm font-semibold text-[#00C4B4]/80">Área do Restaurante</p>
 
       {/* Formulário */}
       <form onSubmit={handleLogin} className="flex w-full max-w-[300px] flex-col gap-2.5">
@@ -75,7 +90,7 @@ export default function RestauranteLogin() {
           placeholder="E-mail"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="h-[38px] rounded-[20px] border-[3px] border-[#FFA801] bg-[#636363] pl-3 text-[#FFA801] placeholder:text-[#FFA801]/60 focus:outline-none focus:ring-2 focus:ring-[#FFA801]/40"
+          className="h-[42px] rounded-[20px] border-[3px] border-[#00C4B4] bg-[#1A2B4A] pl-4 text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-[#00C4B4]/40"
         />
         <input
           type="password"
@@ -83,21 +98,28 @@ export default function RestauranteLogin() {
           placeholder="Senha"
           value={senha}
           onChange={(e) => setSenha(e.target.value)}
-          className="h-[38px] rounded-[20px] border-[3px] border-[#FFA801] bg-[#636363] pl-3 text-[#FFA801] placeholder:text-[#FFA801]/60 focus:outline-none focus:ring-2 focus:ring-[#FFA801]/40"
+          className="h-[42px] rounded-[20px] border-[3px] border-[#00C4B4] bg-[#1A2B4A] pl-4 text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-[#00C4B4]/40"
         />
 
         {erro && (
           <p className="text-center text-sm text-red-300" role="alert">{erro}</p>
         )}
 
+        {/* Esqueceu a senha */}
+        <div className="flex justify-end pt-0.5">
+          <button type="button" className="text-xs text-[#00C4B4]/70 underline hover:text-[#00C4B4]">
+            Esqueceu a senha?
+          </button>
+        </div>
+
         <div className="flex items-center justify-between pt-1">
-          <Link to="/restaurante/cadastro" className="text-sm text-[#FFA801] underline">
+          <Link to="/restaurante/cadastro" className="text-sm text-[#00C4B4] underline">
             Cadastrar restaurante
           </Link>
           <button
             type="submit"
             disabled={loading}
-            className="rounded-lg bg-[#FFA801] px-5 py-2 font-semibold text-[#636363] transition hover:opacity-90 disabled:opacity-50"
+            className="rounded-lg bg-[#00C4B4] px-5 py-2 font-semibold text-[#0F1E34] transition hover:opacity-90 disabled:opacity-50"
           >
             {loading ? 'Entrando…' : 'Entrar'}
           </button>
@@ -110,10 +132,14 @@ export default function RestauranteLogin() {
           <button
             type="button"
             onClick={() => {
-              sessionStorage.setItem('nelore_jwt', gerarTokenRestauranteFake());
+              const fakeToken = gerarTokenRestauranteFake();
+              sessionStorage.setItem('nelore_jwt', fakeToken);
+              // Salva o ID do restaurante fake para o painel usar
+              const restId = extrairRestauranteIdDoToken(fakeToken);
+              if (restId) sessionStorage.setItem('nelore_restaurante_id', restId);
               navigate('/restaurante/dashboard', { replace: true });
             }}
-            className="w-full rounded-lg border-2 border-dashed border-yellow-400/60 bg-yellow-400/10 py-2 text-xs font-semibold text-yellow-300 hover:bg-yellow-400/20"
+            className="w-full rounded-lg border-2 border-dashed border-[#00C4B4]/40 bg-[#00C4B4]/10 py-2 text-xs font-semibold text-[#00C4B4] hover:bg-[#00C4B4]/20"
           >
             ⚠️ Modo dev — entrar sem backend
           </button>

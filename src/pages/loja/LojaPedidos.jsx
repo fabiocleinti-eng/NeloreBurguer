@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { LojaHeader } from '@/components/loja/LojaHeader';
 import { LojaBottomNav } from '@/components/loja/LojaBottomNav';
+import { RocketLoader } from '@/components/RocketLoader';
 import { pedidosApi } from '@/services/api';
 
 const STATUS_LABEL = {
@@ -61,7 +62,7 @@ export default function LojaPedidos() {
   }, []);
 
   return (
-    <div className="flex h-screen flex-col overflow-hidden bg-gradient-to-b from-[#701515] to-[#D02727]">
+    <div className="flex h-screen flex-col overflow-hidden bg-gradient-to-b from-[#2D7A4F] to-[#3CB371]">
 
       <div className="mx-auto w-full max-w-lg shrink-0">
         <LojaHeader />
@@ -72,7 +73,7 @@ export default function LojaPedidos() {
           <h3 className="text-xl font-bold text-zinc-800">Meus Pedidos</h3>
 
           {carregando && (
-            <p className="mt-8 text-center text-sm text-zinc-400">Carregando…</p>
+            <RocketLoader mensagem="Buscando seus pedidos…" />
           )}
 
           {!carregando && erro && (
@@ -110,7 +111,7 @@ export default function LojaPedidos() {
                   <li key={id}>
                   <Link
                     to={`/loja/pedidos/${id}`}
-                    className="block rounded-xl border border-zinc-200 p-4 transition hover:border-[#D02727]/40 hover:shadow-sm"
+                    className="block rounded-xl border border-zinc-200 p-4 transition hover:border-[#3CB371]/40 hover:shadow-sm"
                   >
                     <div className="flex items-center justify-between">
                       <span className="text-sm font-bold text-zinc-800">
@@ -153,7 +154,7 @@ export default function LojaPedidos() {
                           Total: R$ {totalReais}
                         </p>
                       )}
-                      <span className="text-xs text-[#D02727]">Ver detalhes ›</span>
+                      <span className="text-xs text-[#3CB371]">Ver detalhes ›</span>
                     </div>
                   </Link>
                   </li>

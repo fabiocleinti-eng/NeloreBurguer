@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { LojaHeader } from '@/components/loja/LojaHeader';
 import { LojaBottomNav } from '@/components/loja/LojaBottomNav';
+import { RocketLoader } from '@/components/RocketLoader';
 import { pedidosApi, entregadoresApi } from '@/services/api';
 import { notificarStatusPedido } from '@/utils/notificacoes';
 
@@ -67,7 +68,7 @@ function TimelinePedido({ status }) {
               <div
                 className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm
                   ${concluido ? 'bg-green-500 text-white' : ''}
-                  ${atual     ? 'bg-[#D02727] text-white shadow-md' : ''}
+                  ${atual     ? 'bg-[#3CB371] text-white shadow-md' : ''}
                   ${pendente  ? 'bg-zinc-200 text-zinc-400' : ''}
                 `}
               >
@@ -88,7 +89,7 @@ function TimelinePedido({ status }) {
               <p
                 className={`text-sm font-semibold leading-tight
                   ${concluido ? 'text-green-600' : ''}
-                  ${atual     ? 'text-[#D02727]' : ''}
+                  ${atual     ? 'text-[#3CB371]' : ''}
                   ${pendente  ? 'text-zinc-400' : ''}
                 `}
               >
@@ -403,7 +404,7 @@ export default function LojaPedidoDetalhe() {
     pedido?.status === 'AGUARDANDO_CONFIRMACAO';
 
   return (
-    <div className="flex h-screen flex-col overflow-hidden bg-gradient-to-b from-[#701515] to-[#D02727]">
+    <div className="flex h-screen flex-col overflow-hidden bg-gradient-to-b from-[#2D7A4F] to-[#3CB371]">
 
       <div className="mx-auto w-full max-w-lg shrink-0">
         <LojaHeader />
@@ -430,7 +431,7 @@ export default function LojaPedidoDetalhe() {
 
           {/* Loading */}
           {carregando && (
-            <p className="mt-12 text-center text-sm text-zinc-400">Carregando pedido…</p>
+            <RocketLoader mensagem="Carregando pedido…" />
           )}
 
           {/* Erro */}

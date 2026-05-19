@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { RocketLoader } from '@/components/RocketLoader';
 import { entregadoresApi } from '@/services/api';
 
 function mascaraTelefone(v) {
@@ -90,13 +91,13 @@ export default function RestauranteEntregadores() {
   }
 
   const inputClass =
-    'h-[38px] w-full rounded-[20px] border-[3px] border-[#FFA801] bg-[#636363] pl-3 text-[#FFA801] placeholder:text-[#FFA801]/60 focus:outline-none focus:ring-2 focus:ring-[#FFA801]/40';
+    'h-[38px] w-full rounded-[20px] border-[3px] border-[#00C4B4] bg-[#1A2B4A] pl-3 text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-[#00C4B4]/40';
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#636363] font-sans text-[#FFA801]">
+    <div className="flex min-h-screen flex-col bg-[#0F1E34] font-sans">
 
       {/* Header */}
-      <header className="flex items-center gap-3 bg-[#701515] px-5 py-4 shadow">
+      <header className="flex items-center gap-3 bg-[#1A2B4A] px-5 py-4 shadow">
         <button type="button" onClick={() => navigate('/restaurante/dashboard')} className="text-white text-xl">‹</button>
         <h1 className="text-lg font-bold text-white">Entregadores</h1>
       </header>
@@ -115,7 +116,7 @@ export default function RestauranteEntregadores() {
           <button
             type="button"
             onClick={() => { setAbrirForm(true); setErros({}); }}
-            className="mb-6 w-full rounded-xl bg-[#FFA801] py-3 font-semibold text-[#636363] hover:opacity-90"
+            className="mb-6 w-full rounded-xl bg-[#00C4B4] py-3 font-semibold text-[#0F1E34] hover:opacity-90"
           >
             + Cadastrar Entregador
           </button>
@@ -123,7 +124,7 @@ export default function RestauranteEntregadores() {
 
         {/* Formulário de cadastro */}
         {abrirForm && (
-          <form onSubmit={handleCadastrar} className="mb-6 flex flex-col gap-3 rounded-2xl border-2 border-[#FFA801]/40 bg-black/20 p-5">
+          <form onSubmit={handleCadastrar} className="mb-6 flex flex-col gap-3 rounded-2xl border-2 border-[#00C4B4]/40 bg-[#1A2B4A]/60 p-5">
             <p className="font-bold text-white">Novo Entregador</p>
 
             <div>
@@ -169,7 +170,7 @@ export default function RestauranteEntregadores() {
               <button
                 type="submit"
                 disabled={salvando}
-                className="flex-1 rounded-xl bg-[#FFA801] py-2 font-semibold text-[#636363] hover:opacity-90 disabled:opacity-50"
+                className="flex-1 rounded-xl bg-[#00C4B4] py-2 font-semibold text-[#0F1E34] hover:opacity-90 disabled:opacity-50"
               >
                 {salvando ? 'Salvando…' : 'Salvar'}
               </button>
@@ -179,7 +180,7 @@ export default function RestauranteEntregadores() {
 
         {/* Lista de entregadores */}
         {carregando ? (
-          <p className="text-center text-sm text-white/50">Carregando entregadores…</p>
+          <RocketLoader mensagem="Carregando entregadores…" />
         ) : entregadores.length === 0 ? (
           <div className="rounded-2xl border border-white/20 bg-white/5 px-4 py-8 text-center">
             <p className="text-4xl">🛵</p>
@@ -188,11 +189,11 @@ export default function RestauranteEntregadores() {
         ) : (
           <div className="flex flex-col gap-3">
             {entregadores.map((e) => (
-              <div key={e.id} className="flex items-center justify-between rounded-2xl border border-[#FFA801]/30 bg-black/20 px-4 py-4">
+              <div key={e.id} className="flex items-center justify-between rounded-2xl border border-[#00C4B4]/30 bg-[#1A2B4A]/60 px-4 py-4">
                 <div>
                   <p className="font-semibold text-white">{e.nome}</p>
                   <p className="text-xs text-white/50">{e.email}</p>
-                  {e.veiculo && <p className="text-xs text-[#FFA801]/70">🛵 {e.veiculo}{e.placa ? ` · ${e.placa}` : ''}</p>}
+                  {e.veiculo && <p className="text-xs text-[#00C4B4]/80">🛵 {e.veiculo}{e.placa ? ` · ${e.placa}` : ''}</p>}
                 </div>
                 <button
                   type="button"

@@ -69,7 +69,7 @@ function Secao({ titulo, icone, children, defaultAberta = false }) {
 }
 
 const inputClass =
-  'w-full rounded-xl border border-zinc-200 bg-white px-3 py-2.5 text-sm text-zinc-800 placeholder:text-zinc-400 focus:border-[#D02727] focus:outline-none';
+  'w-full rounded-xl border border-zinc-200 bg-white px-3 py-2.5 text-sm text-zinc-800 placeholder:text-zinc-400 focus:border-[#3CB371] focus:outline-none';
 
 // ─── Seção: Editar Perfil ─────────────────────────────────────────────────────
 function EditarPerfil({ usuario }) {
@@ -150,7 +150,7 @@ function EditarPerfil({ usuario }) {
       {sucesso && <p className="text-center text-sm text-green-600">✅ {sucesso}</p>}
 
       <button type="submit" disabled={salvando}
-        className="mt-1 w-full rounded-xl bg-[#D02727] py-2.5 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50">
+        className="mt-1 w-full rounded-xl bg-[#3CB371] py-2.5 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50">
         {salvando ? 'Salvando…' : 'Salvar alterações'}
       </button>
     </form>
@@ -181,7 +181,7 @@ function EnderecoEntrega() {
             Cancelar
           </button>
           <button type="button" onClick={salvar}
-            className="flex-1 rounded-xl bg-[#D02727] py-2 text-sm font-semibold text-white hover:opacity-90">
+            className="flex-1 rounded-xl bg-[#3CB371] py-2 text-sm font-semibold text-white hover:opacity-90">
             Salvar
           </button>
         </div>
@@ -327,7 +327,7 @@ function MeusCartoes() {
               Cancelar
             </button>
             <button type="submit"
-              className="flex-1 rounded-xl bg-[#D02727] py-2.5 text-sm font-bold text-white hover:opacity-90">
+              className="flex-1 rounded-xl bg-[#3CB371] py-2.5 text-sm font-bold text-white hover:opacity-90">
               Salvar cartão
             </button>
           </div>
@@ -336,7 +336,7 @@ function MeusCartoes() {
 
       {!adicionando && (
         <button type="button" onClick={() => setAdicionando(true)}
-          className="w-full rounded-xl border-2 border-dashed border-zinc-300 py-3 text-sm font-semibold text-zinc-500 hover:border-[#D02727] hover:text-[#D02727] transition">
+          className="w-full rounded-xl border-2 border-dashed border-zinc-300 py-3 text-sm font-semibold text-zinc-500 hover:border-[#3CB371] hover:text-[#3CB371] transition">
           + Adicionar cartão
         </button>
       )}
@@ -363,7 +363,7 @@ export default function LojaPerfil() {
   const initials = nome.split(' ').slice(0, 2).map((w) => w[0]?.toUpperCase() ?? '').join('');
 
   return (
-    <div className="flex h-screen flex-col overflow-hidden bg-gradient-to-b from-[#701515] to-[#D02727]">
+    <div className="flex h-screen flex-col overflow-hidden bg-gradient-to-b from-[#2D7A4F] to-[#3CB371]">
 
       <div className="mx-auto w-full max-w-lg shrink-0">
         <LojaHeader />
@@ -374,7 +374,7 @@ export default function LojaPerfil() {
 
           {/* Avatar + nome */}
           <div className="flex flex-col items-center gap-3 pb-5">
-            <div className="flex h-20 w-20 items-center justify-center rounded-full bg-[#D02727] text-2xl font-bold text-white">
+            <div className="flex h-20 w-20 items-center justify-center rounded-full bg-[#2D7A4F] text-2xl font-bold text-white">
               {initials || '👤'}
             </div>
             <div className="text-center">
@@ -406,7 +406,7 @@ export default function LojaPerfil() {
           <button
             type="button"
             onClick={handleLogout}
-            className="mt-6 w-full rounded-2xl bg-[#D02727] py-3 text-base font-bold text-white transition hover:opacity-90"
+            className="mt-6 w-full rounded-2xl bg-[#E5E7EB] py-3 text-base font-bold text-zinc-600 transition hover:bg-zinc-300"
           >
             Sair da conta
           </button>

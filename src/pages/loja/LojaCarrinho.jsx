@@ -111,7 +111,7 @@ export default function LojaCarrinho() {
   /* ── Tela de sucesso ─────────────────────────────────────────── */
   if (status === 'sucesso') {
     return (
-      <div className="flex h-screen flex-col overflow-hidden bg-gradient-to-b from-[#701515] to-[#D02727]">
+      <div className="flex h-screen flex-col overflow-hidden bg-gradient-to-b from-[#2D7A4F] to-[#3CB371]">
         <div className="mx-auto w-full max-w-lg shrink-0">
           <LojaHeader />
         </div>
@@ -136,7 +136,7 @@ export default function LojaCarrinho() {
                 setStatus('idle');
                 navigate('/loja');
               }}
-              className="mt-2 w-full max-w-[240px] rounded-2xl bg-[#D02727] py-3 text-base font-bold text-white transition hover:opacity-90"
+              className="mt-2 w-full max-w-[240px] rounded-2xl bg-[#3CB371] py-3 text-base font-bold text-white transition hover:opacity-90"
             >
               Voltar ao cardápio
             </button>
@@ -152,7 +152,7 @@ export default function LojaCarrinho() {
 
   /* ── Tela principal ──────────────────────────────────────────── */
   return (
-    <div className="flex h-screen flex-col overflow-hidden bg-gradient-to-b from-[#701515] to-[#D02727]">
+    <div className="flex h-screen flex-col overflow-hidden bg-gradient-to-b from-[#2D7A4F] to-[#3CB371]">
 
       <div className="mx-auto w-full max-w-lg shrink-0">
         <LojaHeader />
@@ -160,7 +160,7 @@ export default function LojaCarrinho() {
 
       {/* Endereço */}
       <div className="mx-auto w-full max-w-lg shrink-0 px-8 py-3">
-        <h2 className="text-2xl font-bold text-[#FFA801]">Endereço</h2>
+        <h2 className="text-2xl font-bold text-white">Endereço</h2>
         {enderecoDisplay ? (
           <p className="mt-1 text-xl font-bold leading-snug text-white">
             {enderecoDisplay}
@@ -168,7 +168,7 @@ export default function LojaCarrinho() {
         ) : (
           <p className="mt-1 text-sm text-white/50">
             Localização não definida —{' '}
-            <Link to="/login" className="underline text-[#FFA801]/70">
+            <Link to="/login" className="underline text-white/80">
               definir no login
             </Link>
           </p>
@@ -183,7 +183,7 @@ export default function LojaCarrinho() {
           {items.length === 0 ? (
             <p className="mt-8 text-center text-zinc-500">
               Carrinho vazio.{' '}
-              <Link to="/loja" className="font-semibold text-[#D02727] underline">
+              <Link to="/loja" className="font-semibold text-[#3CB371] underline">
                 Ver cardápio
               </Link>
             </p>
@@ -266,8 +266,8 @@ export default function LojaCarrinho() {
                       onClick={() => setFormaPagamento(fp.value)}
                       className={`rounded-xl border px-3 py-2 text-sm font-semibold transition ${
                         formaPagamento === fp.value
-                          ? 'border-[#D02727] bg-[#D02727] text-white'
-                          : 'border-zinc-200 bg-white text-zinc-700 hover:border-[#D02727]'
+                          ? 'border-[#3CB371] bg-[#3CB371] text-white'
+                          : 'border-zinc-200 bg-white text-zinc-700 hover:border-[#3CB371]'
                       }`}
                     >
                       {fp.label}
@@ -287,7 +287,7 @@ export default function LojaCarrinho() {
                 type="button"
                 disabled={status === 'loading'}
                 onClick={handleFinalizarPedido}
-                className="mt-4 w-full rounded-2xl bg-[#D02727] py-3 text-base font-bold text-white transition hover:opacity-90 disabled:opacity-60"
+                className="mt-4 w-full rounded-2xl bg-[#3CB371] py-3 text-base font-bold text-white transition hover:opacity-90 disabled:opacity-60"
               >
                 {status === 'loading' ? 'Enviando pedido…' : 'Finalizar pedido'}
               </button>

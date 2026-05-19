@@ -47,9 +47,9 @@ function mascaraTelefone(value) {
 }
 
 const INPUT_CLASS =
-  "h-[38px] w-full rounded-[20px] border-[3px] border-solid border-[#FFA801] bg-[#636363] pl-3 pr-3 text-[#FFA801] placeholder:text-[#FFA801]/60 focus:outline-none focus:ring-2 focus:ring-[#FFA801]/40 disabled:opacity-50";
+  "h-[38px] w-full rounded-[20px] border-[3px] border-solid border-[#3CB371] bg-white/80 pl-3 pr-3 text-zinc-800 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#3CB371]/40 disabled:opacity-50";
 
-const LABEL_CLASS = "text-xs font-semibold text-[#FFA801]/80 pl-1";
+const LABEL_CLASS = "text-xs font-semibold text-white/80 pl-1";
 
 export default function Cadastro() {
   const navigate = useNavigate();
@@ -180,7 +180,7 @@ export default function Cadastro() {
   /* ── Tela de sucesso ── */
   if (sucesso) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center bg-[#636363] px-4 pb-10 pt-8 font-sans">
+      <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-[#2D7A4F] to-[#3CB371] px-4 pb-10 pt-8 font-sans">
         <img
           src={fotoCapa}
           alt="NeloreBurguer"
@@ -188,14 +188,14 @@ export default function Cadastro() {
         />
         <div className="flex w-full max-w-[300px] flex-col items-center gap-4 text-center">
           <span className="text-5xl">✅</span>
-          <h2 className="text-xl font-bold text-[#FFA801]">Cadastro realizado!</h2>
-          <p className="text-sm text-[#FFA801]/80">
+          <h2 className="text-xl font-bold text-white">Cadastro realizado!</h2>
+          <p className="text-sm text-white/80">
             Sua conta foi criada com sucesso. Faça login para continuar.
           </p>
           <button
             type="button"
             onClick={() => navigate("/login", { replace: true })}
-            className="mt-2 h-[38px] w-full rounded-[20px] border-[3px] border-[#FFA801] bg-[#FFA801] font-bold text-[#636363] transition-all hover:bg-[#E89500]"
+            className="mt-2 h-[38px] w-full rounded-[20px] border-[3px] border-white bg-white font-bold text-[#2D7A4F] transition-all hover:bg-white/90"
           >
             Ir para o login
           </button>
@@ -206,7 +206,7 @@ export default function Cadastro() {
 
   /* ── Formulário ── */
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-[#636363] px-4 pb-10 pt-8 font-sans text-[13px] text-[#FFA801]">
+    <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-[#2D7A4F] to-[#3CB371] px-4 pb-10 pt-8 font-sans text-[13px] text-white">
       <div className="flex flex-row items-center justify-center pb-5">
         <img
           src={fotoCapa}
@@ -215,7 +215,7 @@ export default function Cadastro() {
         />
       </div>
 
-      <h1 className="mb-6 text-center text-xl font-bold text-[#FFA801]">
+      <h1 className="mb-6 text-center text-xl font-bold text-white">
         Criar Conta
       </h1>
 
@@ -294,9 +294,9 @@ export default function Cadastro() {
 
         {/* Separador endereço */}
         <div className="mt-1 flex items-center gap-2">
-          <div className="h-px flex-1 bg-[#FFA801]/30" />
-          <span className="text-xs text-[#FFA801]/60">Endereço (opcional)</span>
-          <div className="h-px flex-1 bg-[#FFA801]/30" />
+          <div className="h-px flex-1 bg-white/30" />
+          <span className="text-xs text-white/60">Endereço (opcional)</span>
+          <div className="h-px flex-1 bg-white/30" />
         </div>
 
         {/* CEP */}
@@ -313,7 +313,7 @@ export default function Cadastro() {
               className={`${INPUT_CLASS} pr-8`}
             />
             {cepStatus === "buscando" && (
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-[#FFA801]/60">
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-white/60">
                 ⏳
               </span>
             )}
@@ -423,13 +423,13 @@ export default function Cadastro() {
         <button
           type="submit"
           disabled={loading}
-          className="mt-4 h-[38px] rounded-[20px] border-[3px] border-solid border-[#FFA801] bg-[#FFA801] font-bold text-[#636363] transition-all hover:bg-[#E89500] disabled:cursor-not-allowed disabled:opacity-50"
+          className="mt-4 h-[38px] rounded-[20px] border-[3px] border-solid border-white bg-white font-bold text-[#2D7A4F] transition-all hover:bg-white/90 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {loading ? "Registrando..." : "Criar conta"}
         </button>
       </form>
 
-      <div className="mt-6 text-center text-[#FFA801]">
+      <div className="mt-6 text-center text-white">
         <p>
           Já tem conta?{" "}
           <Link to="/login" className="underline hover:text-[#E89500]">
