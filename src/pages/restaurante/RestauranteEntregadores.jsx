@@ -1,7 +1,32 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { RocketLoader } from '@/components/RocketLoader';
 import { entregadoresApi } from '@/services/api';
+
+function lerArquivoComoDataURL(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => resolve(e.target.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+function BotaoUpload({ onArquivo, children }) {
+  const ref = useRef(null);
+  return (
+    <>
+      <input ref={ref} type="file" accept="image/*" className="hidden"
+        onChange={async (e) => {
+          const file = e.target.files?.[0];
+          if (file) onArquivo(file, await lerArquivoComoDataURL(file));
+          e.target.value = '';
+        }}
+      />
+      <button type="button" onClick={() => ref.current?.click()}>{children}</button>
+    </>
+  );
+}
 
 function mascaraTelefone(v) {
   return v.replace(/\D/g, '').slice(0, 11)
@@ -15,6 +40,8 @@ const formInicial = {
   telefone: '',
   veiculo: '',
   placa: '',
+  foto: null,       // dataURL
+  fotoPreview: null,
 };
 
 export default function RestauranteEntregadores() {
@@ -64,11 +91,12 @@ export default function RestauranteEntregadores() {
     setSalvando(true);
     try {
       await entregadoresApi.cadastrar({
-        nome: form.nome.trim(),
-        email: form.email.trim(),
+        nome:     form.nome.trim(),
+        email:    form.email.trim(),
         telefone: form.telefone || undefined,
-        veiculo: form.veiculo.trim(),
-        placa: form.placa.trim().toUpperCase() || undefined,
+        veiculo:  form.veiculo.trim(),
+        placa:    form.placa.trim().toUpperCase() || undefined,
+        foto:     form.foto || undefined,
       });
       setMsgSucesso('Entregador cadastrado com sucesso!');
       setForm(formInicial);
@@ -157,6 +185,25 @@ export default function RestauranteEntregadores() {
               className={inputClass}
             />
 
+            {/* Foto do entregador */}
+            <div className="flex items-center gap-4">
+              <div className="h-16 w-16 shrink-0 overflow-hidden rounded-2xl border-2 border-[#00C4B4]/40 bg-[#0F1E34]">
+                {form.fotoPreview ? (
+                  <img src={form.fotoPreview} alt="foto" className="h-full w-full object-cover" />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center text-2xl opacity-30">👤</div>
+                )}
+              </div>
+              <div className="flex flex-col gap-1">
+                <p className="text-xs text-white/50">Foto do entregador (opcional)</p>
+                <BotaoUpload onArquivo={(_file, preview) => { set('fotoPreview', preview); set('foto', preview); }}>
+                  <div className="rounded-xl border border-[#00C4B4]/50 px-4 py-1.5 text-xs font-semibold text-[#00C4B4] hover:bg-[#00C4B4]/10 transition">
+                    📷 {form.fotoPreview ? 'Trocar foto' : 'Adicionar foto'}
+                  </div>
+                </BotaoUpload>
+              </div>
+            </div>
+
             {erros.geral && <p className="text-center text-sm text-red-300">{erros.geral}</p>}
 
             <div className="flex gap-3">
@@ -189,10 +236,20 @@ export default function RestauranteEntregadores() {
         ) : (
           <div className="flex flex-col gap-3">
             {entregadores.map((e) => (
-              <div key={e.id} className="flex items-center justify-between rounded-2xl border border-[#00C4B4]/30 bg-[#1A2B4A]/60 px-4 py-4">
-                <div>
-                  <p className="font-semibold text-white">{e.nome}</p>
-                  <p className="text-xs text-white/50">{e.email}</p>
+              <div key={e.id} className="flex items-center justify-between rounded-2xl border border-[#00C4B4]/30 bg-[#1A2B4A]/60 px-4 py-4 gap-3">
+                {/* Avatar */}
+                <div className="h-12 w-12 shrink-0 overflow-hidden rounded-xl border border-[#00C4B4]/30 bg-[#0F1E34]">
+                  {e.foto ? (
+                    <img src={e.foto} alt={e.nome} className="h-full w-full object-cover" />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center text-xl font-bold text-[#00C4B4]">
+                      {e.nome?.[0]?.toUpperCase() ?? '?'}
+                    </div>
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-white truncate">{e.nome}</p>
+                  <p className="text-xs text-white/50 truncate">{e.email}</p>
                   {e.veiculo && <p className="text-xs text-[#00C4B4]/80">🛵 {e.veiculo}{e.placa ? ` · ${e.placa}` : ''}</p>}
                 </div>
                 <button

@@ -23,6 +23,8 @@ import RestauranteEntregadores from "@/pages/restaurante/RestauranteEntregadores
 import RestauranteCardapio from "@/pages/restaurante/RestauranteCardapio";
 import RestaurantePerfil from "@/pages/restaurante/RestaurantePerfil";
 import RestauranteLogin from "@/pages/restaurante/RestauranteLogin";
+import RestaurantePedidos from "@/pages/restaurante/RestaurantePedidos";
+import RestauranteFinanceiro from "@/pages/restaurante/RestauranteFinanceiro";
 import { getStoredToken } from "@/services/api";
 import { BrowserRouter, Navigate, Outlet, Route, Routes } from "react-router-dom";
 
@@ -74,6 +76,8 @@ export default function App() {
             <Route path="/restaurante/perfil" element={<RestaurantePerfil />} />
             <Route path="/restaurante/entregadores" element={<RestauranteEntregadores />} />
             <Route path="/restaurante/cardapio" element={<RestauranteCardapio />} />
+            <Route path="/restaurante/pedidos" element={<RestaurantePedidos />} />
+            <Route path="/restaurante/financeiro" element={<RestauranteFinanceiro />} />
           </Route>
 
           {/* ── Área do cliente (autenticada) ── */}

@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { LojaHeader } from '@/components/loja/LojaHeader';
 import { LojaBottomNav } from '@/components/loja/LojaBottomNav';
 import { RocketLoader } from '@/components/RocketLoader';
-import { pedidosApi } from '@/services/api';
+import { pedidosApi, mensagensApi } from '@/services/api';
 
 const STATUS_LABEL = {
   pendente: { label: 'Pendente', cor: 'bg-yellow-100 text-yellow-700' },
@@ -27,24 +27,28 @@ function StatusBadge({ status }) {
 }
 
 export default function LojaPedidos() {
-  const [pedidos, setPedidos] = useState([]);
+  const [pedidos,   setPedidos]   = useState([]);
+  const [mensagens, setMensagens] = useState([]);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState('');
 
   useEffect(() => {
     let cancelado = false;
-    pedidosApi
-      .meusPedidos()
-      .then(({ data }) => {
+    Promise.all([
+      pedidosApi.meusPedidos(),
+      mensagensApi.listarParaMim().catch(() => ({ data: [] })),
+    ])
+      .then(([resPedidos, resMensagens]) => {
         if (cancelado) return;
-        const lista = Array.isArray(data)
-          ? data
-          : Array.isArray(data?.pedidos)
-            ? data.pedidos
-            : Array.isArray(data?.data)
-              ? data.data
+        const lista = Array.isArray(resPedidos.data)
+          ? resPedidos.data
+          : Array.isArray(resPedidos.data?.pedidos)
+            ? resPedidos.data.pedidos
+            : Array.isArray(resPedidos.data?.data)
+              ? resPedidos.data.data
               : [];
         setPedidos(lista);
+        setMensagens(Array.isArray(resMensagens.data) ? resMensagens.data : []);
       })
       .catch((err) => {
         if (cancelado) return;
@@ -105,7 +109,8 @@ export default function LojaPedidos() {
                     ? (Number(p.total) / 100).toFixed(2).replace('.', ',')
                     : null;
 
-                const podeCancelar = p.status === 'AGUARDANDO_CONFIRMACAO';
+                // Mensagens não lidas deste pedido
+                const msgNaoLidas = mensagens.filter((m) => m.pedidoId === id && !m.lida).length;
 
                 return (
                   <li key={id}>
@@ -114,9 +119,16 @@ export default function LojaPedidos() {
                     className="block rounded-xl border border-zinc-200 p-4 transition hover:border-[#3CB371]/40 hover:shadow-sm"
                   >
                     <div className="flex items-center justify-between">
-                      <span className="text-sm font-bold text-zinc-800">
-                        Pedido #{id}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-bold text-zinc-800">
+                          Pedido #{typeof id === 'string' ? id.slice(-6).toUpperCase() : id}
+                        </span>
+                        {msgNaoLidas > 0 && (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-[#3CB371] px-2 py-0.5 text-[10px] font-bold text-white animate-pulse">
+                            💬 {msgNaoLidas}
+                          </span>
+                        )}
+                      </div>
                       <StatusBadge status={p.status} />
                     </div>
 

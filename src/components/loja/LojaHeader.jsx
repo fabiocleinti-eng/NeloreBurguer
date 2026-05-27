@@ -8,10 +8,15 @@ function getEnderecoDisplay() {
   try { return sessionStorage.getItem('nelore_localizacao') || ''; } catch { return ''; }
 }
 
+function isPreviewDoRestaurante() {
+  try { return Boolean(sessionStorage.getItem('nelore_restaurante_id')); } catch { return false; }
+}
+
 export function LojaHeader() {
   const navigate = useNavigate();
   const [painelAberto, setPainelAberto] = useState(false);
   const [naoLidas, setNaoLidas] = useState(0);
+  const [modoPreview] = useState(isPreviewDoRestaurante);
 
   const atualizarContador = useCallback(() => {
     setNaoLidas(totalNaoLidas());
@@ -26,6 +31,25 @@ export function LojaHeader() {
 
   return (
     <>
+      {/* ── Banner "Você está em modo preview" ── */}
+      {modoPreview && (
+        <div className="w-full bg-amber-400 px-4 py-2 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="text-sm shrink-0">👁️</span>
+            <span className="text-xs font-semibold text-amber-900 truncate">
+              Visualizando como cliente
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={() => navigate('/restaurante/dashboard')}
+            className="shrink-0 rounded-xl bg-amber-900 px-3 py-1 text-xs font-bold text-amber-100 hover:opacity-90 transition whitespace-nowrap"
+          >
+            ← Voltar ao painel
+          </button>
+        </div>
+      )}
+
       <header className="flex w-full max-w-lg items-center justify-between px-4 pt-3 pb-3 gap-3">
 
         {/* Logo + nome */}

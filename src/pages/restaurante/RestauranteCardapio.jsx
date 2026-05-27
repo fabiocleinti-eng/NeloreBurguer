@@ -1,7 +1,32 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { RocketLoader } from '@/components/RocketLoader';
 import { cardapioApi } from '@/services/api';
+
+function lerArquivoComoDataURL(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => resolve(e.target.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+function BotaoUpload({ onArquivo, children }) {
+  const ref = useRef(null);
+  return (
+    <>
+      <input ref={ref} type="file" accept="image/*" className="hidden"
+        onChange={async (e) => {
+          const file = e.target.files?.[0];
+          if (file) onArquivo(file, await lerArquivoComoDataURL(file));
+          e.target.value = '';
+        }}
+      />
+      <button type="button" onClick={() => ref.current?.click()}>{children}</button>
+    </>
+  );
+}
 
 // ─── Tabs ────────────────────────────────────────────────────────────────────
 const TABS = ['Categorias', 'Itens'];
@@ -140,15 +165,27 @@ function TabCategorias() {
         <div className="rounded-2xl border border-white/20 bg-white/5 px-4 py-8 text-center">
           <p className="text-3xl">📋</p>
           <p className="mt-2 text-sm text-white/60">Nenhuma categoria cadastrada.</p>
+          <p className="mt-1 text-xs text-white/30">Clique em "+ Nova Categoria" para começar.</p>
         </div>
       ) : (
         categorias.map((cat) => (
           <div key={cat.id} className="flex items-center justify-between rounded-2xl border border-[#00C4B4]/30 bg-[#1A2B4A]/60 px-4 py-4">
-            <div>
+            <div className="flex-1">
               <p className="font-semibold text-white">{cat.titulo || cat.nome}</p>
-              {cat.destaque && <p className="text-xs text-[#00C4B4]/80">{cat.destaque}</p>}
+              {cat.destaque  && <p className="text-xs text-[#00C4B4]/80">{cat.destaque}</p>}
               {cat.descricao && <p className="text-xs text-white/40">{cat.descricao}</p>}
             </div>
+            <button
+              type="button"
+              onClick={async () => {
+                if (!window.confirm(`Excluir categoria "${cat.titulo || cat.nome}"?`)) return;
+                await cardapioApi.deletarCategoria(cat.id).catch(() => {});
+                carregar();
+              }}
+              className="ml-3 shrink-0 rounded-xl border border-red-500/30 px-3 py-1.5 text-xs text-red-400 hover:bg-red-500/10 transition"
+            >
+              Excluir
+            </button>
           </div>
         ))
       )}
@@ -162,7 +199,7 @@ function TabItens() {
   const [categorias, setCategorias] = useState([]);
   const [carregando, setCarregando] = useState(true);
   const [abrirForm, setAbrirForm] = useState(false);
-  const [form, setForm] = useState({ nome: '', descricao: '', preco: '', categoriaId: '', disponivel: true });
+  const [form, setForm] = useState({ nome: '', descricao: '', preco: '', categoriaId: '', disponivel: true, foto: null, fotoPreview: null });
   const [erros, setErros] = useState({});
   const [salvando, setSalvando] = useState(false);
   const [msgSucesso, setMsgSucesso] = useState('');
@@ -183,7 +220,7 @@ function TabItens() {
           cardapioApi.itensPorCategoria(cat.id)
             .then(({ data }) => {
               const lista = Array.isArray(data) ? data : Array.isArray(data?.data) ? data.data : [];
-              return lista.map((item) => ({ ...item, _categoriaTitulo: cat.titulo || cat.nome }));
+              return lista.map((item) => ({ ...item, _categoriaTitulo: cat.titulo || cat.nome, _categoriaId: cat.id }));
             })
             .catch(() => [])
         )
@@ -219,15 +256,19 @@ function TabItens() {
     setSalvando(true);
     try {
       const precoEmCentavos = Math.round(parseFloat(form.preco.replace(',', '.')) * 100);
-      await cardapioApi.criarItem({
+      const { data: novoItem } = await cardapioApi.criarItem({
         nome: form.nome.trim(),
         descricao: form.descricao.trim() || undefined,
         preco_centavos: precoEmCentavos,
         categoria_id: form.categoriaId,
         disponivel: form.disponivel,
       });
+      // Se havia foto selecionada, vincula ao item recém-criado
+      if (form.foto && novoItem?.id) {
+        await cardapioApi.atualizarItemImagem(novoItem.id, form.categoriaId, form.foto).catch(() => {});
+      }
       setMsgSucesso('Item criado!');
-      setForm({ nome: '', descricao: '', preco: '', categoriaId: '', disponivel: true });
+      setForm({ nome: '', descricao: '', preco: '', categoriaId: '', disponivel: true, foto: null, fotoPreview: null });
       setAbrirForm(false);
       carregar();
       setTimeout(() => setMsgSucesso(''), 3000);
@@ -290,6 +331,25 @@ function TabItens() {
             {erros.categoriaId && <p className="mt-0.5 pl-3 text-xs text-red-300">{erros.categoriaId}</p>}
           </div>
 
+          {/* Foto do item */}
+          <div className="flex items-center gap-4">
+            <div className="h-16 w-16 shrink-0 overflow-hidden rounded-xl border-2 border-[#00C4B4]/40 bg-[#0F1E34]">
+              {form.fotoPreview ? (
+                <img src={form.fotoPreview} alt="preview" className="h-full w-full object-cover" />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center text-2xl opacity-30">🍽️</div>
+              )}
+            </div>
+            <div className="flex flex-col gap-1">
+              <p className="text-xs text-white/50">Foto do item (opcional)</p>
+              <BotaoUpload onArquivo={(_file, preview) => { set('fotoPreview', preview); set('foto', preview); }}>
+                <div className="rounded-xl border border-[#00C4B4]/50 px-4 py-1.5 text-xs font-semibold text-[#00C4B4] hover:bg-[#00C4B4]/10 transition">
+                  📷 {form.fotoPreview ? 'Trocar foto' : 'Adicionar foto'}
+                </div>
+              </BotaoUpload>
+            </div>
+          </div>
+
           <label className="flex items-center gap-2 pl-1 text-sm text-white/80">
             <input
               type="checkbox"
@@ -319,23 +379,41 @@ function TabItens() {
         <div className="rounded-2xl border border-white/20 bg-white/5 px-4 py-8 text-center">
           <p className="text-3xl">🍔</p>
           <p className="mt-2 text-sm text-white/60">Nenhum item cadastrado.</p>
+          <p className="mt-1 text-xs text-white/30">Crie uma categoria primeiro, depois clique em "+ Novo Item".</p>
         </div>
       ) : (
         itens.map((item) => (
-          <div key={item.id} className="flex items-center justify-between rounded-2xl border border-[#00C4B4]/30 bg-[#1A2B4A]/60 px-4 py-4">
-            <div className="flex-1">
+          <div key={item.id} className="flex items-start gap-3 rounded-2xl border border-[#00C4B4]/30 bg-[#1A2B4A]/60 px-4 py-4">
+            {/* Foto do item */}
+            <div className="h-14 w-14 shrink-0 overflow-hidden rounded-xl border border-[#00C4B4]/20 bg-[#0F1E34]">
+              {item.imagem ? (
+                <img src={item.imagem} alt={item.nome} className="h-full w-full object-cover" />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center text-xl opacity-20">🍽️</div>
+              )}
+            </div>
+            <div className="flex-1 min-w-0">
               <p className="font-semibold text-white">{item.nome || item.name}</p>
               <p className="text-xs text-[#00C4B4]/80">{item._categoriaTitulo}</p>
-              {item.descricao && <p className="text-xs text-white/40">{item.descricao}</p>}
-            </div>
-            <div className="text-right">
-              <p className="font-bold text-[#00C4B4]">
+              {item.descricao && <p className="text-xs text-white/40 truncate">{item.descricao}</p>}
+              <p className="mt-1 font-bold text-[#00C4B4]">
                 R$ {((item.preco_centavos ?? item.precoCentavos ?? 0) / 100).toFixed(2).replace('.', ',')}
               </p>
               <p className={`text-xs ${item.disponivel ? 'text-green-400' : 'text-red-400'}`}>
                 {item.disponivel ? 'Disponível' : 'Indisponível'}
               </p>
             </div>
+            <button
+              type="button"
+              onClick={async () => {
+                if (!window.confirm(`Excluir item "${item.nome || item.name}"?`)) return;
+                await cardapioApi.deletarItem(item._categoriaId ?? item.categoria_id, item.id).catch(() => {});
+                carregar();
+              }}
+              className="ml-3 shrink-0 rounded-xl border border-red-500/30 px-3 py-1.5 text-xs text-red-400 hover:bg-red-500/10 transition"
+            >
+              Excluir
+            </button>
           </div>
         ))
       )}

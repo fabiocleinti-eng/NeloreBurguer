@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { cardapioApi, restaurantesApi } from '@/services/api';
+import { restaurantesApi } from '@/services/api';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 function lerArquivoComoDataURL(file) {
@@ -73,10 +73,9 @@ export default function RestaurantePerfil() {
   const [msgPerfil, setMsgPerfil] = useState('');
   const [erroPerfil, setErroPerfil] = useState('');
 
-  // ── Estado das fotos de mercadorias ─────────────────────────────────────────
-  const [itensFotos, setItensFotos] = useState([]);  // { id, nome, imagem, preview, file }
-  const [salvandoFotos, setSalvandoFotos] = useState({});
-  const [msgFoto, setMsgFoto] = useState({});
+  // ── Estado de salvamento da identidade visual ────────────────────────────────
+  const [salvandoVisual, setSalvandoVisual] = useState(false);
+  const [msgVisual, setMsgVisual] = useState('');
 
   // ── Carregar perfil ──────────────────────────────────────────────────────────
   useEffect(() => {
@@ -98,40 +97,6 @@ export default function RestaurantePerfil() {
       .catch(() => {});
   }, [restauranteId]);
 
-  // ── Carregar itens do cardápio para fotos ────────────────────────────────────
-  useEffect(() => {
-    if (!restauranteId) return;
-
-    async function carregarItens() {
-      try {
-        const { data: dataCat } = await cardapioApi.categoriasPorRestaurante(restauranteId);
-        const cats = Array.isArray(dataCat) ? dataCat : dataCat?.data ?? [];
-
-        const todosItens = await Promise.all(
-          cats.map((cat) =>
-            cardapioApi
-              .itensPorCategoria(cat.id)
-              .then(({ data }) => {
-                const lista = Array.isArray(data) ? data : data?.data ?? [];
-                return lista.map((item) => ({
-                  id: item.id,
-                  nome: item.nome || item.name || '–',
-                  imagem: item.imagem || item.image_url || item.foto || null,
-                  categoria: cat.titulo || cat.nome || '',
-                  preview: null,
-                  file: null,
-                }));
-              })
-              .catch(() => [])
-          )
-        );
-
-        setItensFotos(todosItens.flat());
-      } catch { /* silencioso */ }
-    }
-
-    carregarItens();
-  }, [restauranteId]);
 
   // ── Salvar perfil ────────────────────────────────────────────────────────────
   async function handleSalvarPerfil(e) {
@@ -158,25 +123,24 @@ export default function RestaurantePerfil() {
     }
   }
 
-  // ── Salvar foto de item ──────────────────────────────────────────────────────
-  async function handleSalvarFoto(itemId) {
-    const item = itensFotos.find((i) => i.id === itemId);
-    if (!item?.file) return;
-    setSalvandoFotos((p) => ({ ...p, [itemId]: true }));
-    setMsgFoto((p) => ({ ...p, [itemId]: '' }));
+  // ── Salvar identidade visual (logo + capa) ───────────────────────────────────
+  async function handleSalvarVisual() {
+    if (!logoFile && !capaFile) return;
+    setSalvandoVisual(true);
+    setMsgVisual('');
     try {
-      const formData = new FormData();
-      formData.append('imagem', item.file);
-      await cardapioApi.atualizarItemImagem?.(itemId, formData);
-      setItensFotos((prev) =>
-        prev.map((i) => i.id === itemId ? { ...i, imagem: i.preview, file: null } : i)
-      );
-      setMsgFoto((p) => ({ ...p, [itemId]: '✅ Salvo!' }));
+      await restaurantesApi.atualizar?.(restauranteId, {
+        ...(logoPreview && logoFile ? { imagem: logoPreview } : {}),
+        ...(capaPrev   && capaFile  ? { capa:   capaPrev   } : {}),
+      });
+      setLogoFile(null);
+      setCapaFile(null);
+      setMsgVisual('✅ Identidade visual salva!');
     } catch {
-      setMsgFoto((p) => ({ ...p, [itemId]: '❌ Erro ao enviar.' }));
+      setMsgVisual('❌ Erro ao salvar imagens.');
     } finally {
-      setSalvandoFotos((p) => ({ ...p, [itemId]: false }));
-      setTimeout(() => setMsgFoto((p) => ({ ...p, [itemId]: '' })), 3000);
+      setSalvandoVisual(false);
+      setTimeout(() => setMsgVisual(''), 3500);
     }
   }
 
@@ -239,10 +203,27 @@ export default function RestaurantePerfil() {
                 </div>
               </BotaoUpload>
               {logoFile && (
-                <p className="text-xs text-white/40">✓ Nova imagem selecionada</p>
+                <p className="text-xs text-white/40">✓ Nova logo selecionada</p>
               )}
             </div>
           </div>
+
+          {/* Feedback + botão salvar visual */}
+          {msgVisual && (
+            <p className={`text-center text-sm ${msgVisual.startsWith('✅') ? 'text-green-300' : 'text-red-300'}`}>
+              {msgVisual}
+            </p>
+          )}
+          {(logoFile || capaFile) && (
+            <button
+              type="button"
+              disabled={salvandoVisual}
+              onClick={handleSalvarVisual}
+              className="w-full rounded-2xl bg-[#00C4B4] py-3 font-bold text-[#0F1E34] transition hover:opacity-90 disabled:opacity-50"
+            >
+              {salvandoVisual ? 'Salvando…' : '💾 Salvar Identidade Visual'}
+            </button>
+          )}
         </Secao>
 
         {/* ── SEÇÃO 2: Informações do Restaurante ──────────────────────────── */}
@@ -318,92 +299,6 @@ export default function RestaurantePerfil() {
               {salvando ? 'Salvando…' : 'Salvar Perfil'}
             </button>
           </form>
-        </Secao>
-
-        {/* ── SEÇÃO 3: Fotos de Mercadorias ─────────────────────────────────── */}
-        <Secao titulo="Fotos de Mercadorias">
-          <p className="text-xs text-white/40">
-            Adicione ou atualize a foto de cada produto do seu cardápio.
-          </p>
-
-          {itensFotos.length === 0 ? (
-            <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-8 text-center">
-              <p className="text-3xl">🍔</p>
-              <p className="mt-2 text-sm text-white/50">
-                Nenhum item no cardápio ainda.{' '}
-                <button
-                  type="button"
-                  onClick={() => navigate('/restaurante/cardapio')}
-                  className="text-[#00C4B4] underline"
-                >
-                  Adicionar itens
-                </button>
-              </p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 gap-3">
-              {itensFotos.map((item) => {
-                const exibida = item.preview ?? item.imagem;
-                return (
-                  <div
-                    key={item.id}
-                    className="flex flex-col overflow-hidden rounded-2xl border border-[#00C4B4]/20 bg-[#1A2B4A]/60"
-                  >
-                    {/* Foto */}
-                    <div className="relative h-28 w-full bg-[#0F1E34]">
-                      {exibida ? (
-                        <img src={exibida} alt={item.nome} className="h-full w-full object-cover" />
-                      ) : (
-                        <div className="flex h-full w-full items-center justify-center text-3xl opacity-30">
-                          🍽️
-                        </div>
-                      )}
-
-                      {/* Badge "nova foto" */}
-                      {item.preview && (
-                        <div className="absolute top-1.5 left-1.5 rounded-full bg-[#00C4B4] px-2 py-0.5 text-[10px] font-bold text-[#0F1E34]">
-                          Nova foto
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Info + ações */}
-                    <div className="flex flex-col gap-2 p-3">
-                      <p className="text-xs font-bold leading-tight text-white line-clamp-1">{item.nome}</p>
-                      <p className="text-[10px] text-[#00C4B4]/70">{item.categoria}</p>
-
-                      {msgFoto[item.id] && (
-                        <p className="text-[10px] text-center text-white/60">{msgFoto[item.id]}</p>
-                      )}
-
-                      {item.preview ? (
-                        <button
-                          type="button"
-                          disabled={salvandoFotos[item.id]}
-                          onClick={() => handleSalvarFoto(item.id)}
-                          className="w-full rounded-xl bg-[#00C4B4] py-1.5 text-xs font-bold text-[#0F1E34] transition hover:opacity-90 disabled:opacity-50"
-                        >
-                          {salvandoFotos[item.id] ? 'Enviando…' : '✓ Confirmar'}
-                        </button>
-                      ) : (
-                        <BotaoUpload
-                          onArquivo={(file, preview) => {
-                            setItensFotos((prev) =>
-                              prev.map((i) => i.id === item.id ? { ...i, preview, file } : i)
-                            );
-                          }}
-                        >
-                          <div className="w-full rounded-xl border border-[#00C4B4]/50 py-1.5 text-center text-xs font-semibold text-[#00C4B4] transition hover:bg-[#00C4B4]/10">
-                            📷 Adicionar foto
-                          </div>
-                        </BotaoUpload>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
         </Secao>
 
         <div className="h-8" /> {/* espaço inferior */}
