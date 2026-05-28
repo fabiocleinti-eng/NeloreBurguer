@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { LojaHeader } from '@/components/loja/LojaHeader';
 import { LojaBottomNav } from '@/components/loja/LojaBottomNav';
 import { RocketLoader } from '@/components/RocketLoader';
-import { pedidosApi, entregadoresApi, mensagensApi } from '@/services/api';
+import { pedidosApi, entregadoresApi } from '@/services/api';
 import { notificarStatusPedido } from '@/utils/notificacoes';
 
 /* ── Configuração dos status ─────────────────────────────── */
@@ -342,7 +342,6 @@ export default function LojaPedidoDetalhe() {
   const navigate = useNavigate();
 
   const [pedido, setPedido]         = useState(null);
-  const [mensagens, setMensagens]   = useState([]);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro]             = useState('');
   const [cancelando, setCancelando] = useState(false);
@@ -352,11 +351,8 @@ export default function LojaPedidoDetalhe() {
   useEffect(() => {
     let canceladoEffect = false;
 
-    Promise.all([
-      pedidosApi.buscarPorId(id),
-      mensagensApi.listarPorPedido(id).catch(() => ({ data: [] })),
-    ])
-      .then(([resPedido, resMensagens]) => {
+    pedidosApi.buscarPorId(id)
+      .then((resPedido) => {
         if (canceladoEffect) return;
 
         const raw = resPedido.data?.data ?? resPedido.data;
@@ -366,13 +362,6 @@ export default function LojaPedidoDetalhe() {
         }
         statusAnterior.current = p.status;
         setPedido(p);
-
-        const msgs = Array.isArray(resMensagens.data) ? resMensagens.data : [];
-        setMensagens(msgs);
-        // Marcar todas como lidas ao abrir
-        if (msgs.some((m) => !m.lida)) {
-          mensagensApi.marcarLidasDoPedido(id).catch(() => {});
-        }
       })
       .catch((err) => {
         if (canceladoEffect) return;
@@ -475,25 +464,6 @@ export default function LojaPedidoDetalhe() {
               {/* Avaliação — só quando ENTREGUE */}
               {pedido.status === 'ENTREGUE' && (
                 <AvaliacaoPedido pedidoId={pedido.id} />
-              )}
-
-              {/* Mensagens do restaurante */}
-              {mensagens.length > 0 && (
-                <div className="rounded-xl border border-[#3CB371]/30 bg-[#3CB371]/5 px-4 py-3">
-                  <p className="mb-3 text-xs font-bold uppercase tracking-wide text-[#3CB371]">
-                    💬 Mensagens do restaurante
-                  </p>
-                  <div className="flex flex-col gap-2">
-                    {mensagens.map((m) => (
-                      <div key={m.id} className="flex flex-col gap-0.5 rounded-xl bg-white border border-[#3CB371]/20 px-3 py-2">
-                        <p className="text-sm text-zinc-800">{m.texto}</p>
-                        <p className="text-[10px] text-zinc-400">
-                          {new Date(m.criadoEm).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
               )}
 
               {/* Itens */}

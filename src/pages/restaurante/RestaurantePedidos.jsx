@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { RocketLoader } from '@/components/RocketLoader';
-import { restaurantePedidosApi, pedidosApi, entregadoresApi, mensagensApi } from '@/services/api';
+import { restaurantePedidosApi, pedidosApi, entregadoresApi } from '@/services/api';
 
 // ─── Constantes de status ─────────────────────────────────────────────────────
 const STATUS_LABEL = {
@@ -178,112 +178,8 @@ function ModalEntregador({ entregadores, pedidosAtivos, onConfirmar, onFechar })
   );
 }
 
-// ─── Modal de contato com o cliente ──────────────────────────────────────────
-function ModalContato({ pedido, onFechar }) {
-  const [mensagens, setMensagens] = useState([]);
-  const [texto, setTexto]         = useState('');
-  const [enviando, setEnviando]   = useState(false);
-  const listaRef                  = useRef(null);
-
-  useEffect(() => {
-    mensagensApi.listarPorPedido(pedido.id)
-      .then(({ data }) => setMensagens(Array.isArray(data) ? data : []))
-      .catch(() => {});
-  }, [pedido.id]);
-
-  // Rolar para o final quando chegam novas mensagens
-  useEffect(() => {
-    if (listaRef.current) {
-      listaRef.current.scrollTop = listaRef.current.scrollHeight;
-    }
-  }, [mensagens]);
-
-  async function handleEnviar() {
-    const t = texto.trim();
-    if (!t) return;
-    setEnviando(true);
-    try {
-      const { data } = await mensagensApi.enviar({ pedidoId: pedido.id, texto: t });
-      setMensagens((prev) => [...prev, data]);
-      setTexto('');
-    } finally {
-      setEnviando(false);
-    }
-  }
-
-  const shortId = pedido.id?.slice(-6).toUpperCase() ?? '------';
-  const clienteNome = pedido.cliente?.nome || 'Cliente';
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-sm">
-      <div className="w-full max-w-lg rounded-t-3xl bg-[#1A2B4A] flex flex-col" style={{ maxHeight: '80vh' }}>
-        {/* Header */}
-        <div className="flex items-center gap-3 px-5 py-4 border-b border-white/10 shrink-0">
-          <div className="h-9 w-9 shrink-0 rounded-xl bg-[#00C4B4]/20 border border-[#00C4B4]/30 flex items-center justify-center font-bold text-[#00C4B4]">
-            {clienteNome[0]?.toUpperCase() ?? '?'}
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="font-bold text-white text-sm truncate">{clienteNome}</p>
-            <p className="text-[10px] text-white/40">Pedido #{shortId}</p>
-          </div>
-          <button type="button" onClick={onFechar} className="text-white/40 hover:text-white text-xl">✕</button>
-        </div>
-
-        {/* Aviso */}
-        <div className="mx-4 mt-3 rounded-xl bg-amber-500/10 border border-amber-500/20 px-3 py-2 shrink-0">
-          <p className="text-[10px] text-amber-300/80">
-            📢 O cliente receberá esta mensagem na área de pedidos. Apenas o restaurante pode iniciar a conversa.
-          </p>
-        </div>
-
-        {/* Lista de mensagens */}
-        <div ref={listaRef} className="flex-1 overflow-y-auto px-4 py-3 flex flex-col gap-2 min-h-0">
-          {mensagens.length === 0 ? (
-            <div className="flex flex-1 flex-col items-center justify-center text-center py-6">
-              <p className="text-3xl">💬</p>
-              <p className="mt-2 text-sm text-white/40">Nenhuma mensagem ainda.</p>
-              <p className="text-xs text-white/25 mt-1">Envie uma mensagem ao cliente abaixo.</p>
-            </div>
-          ) : (
-            mensagens.map((m) => (
-              <div key={m.id} className="flex justify-end">
-                <div className="max-w-[85%] rounded-2xl rounded-tr-sm bg-[#00C4B4]/20 border border-[#00C4B4]/30 px-4 py-2">
-                  <p className="text-sm text-white">{m.texto}</p>
-                  <p className="text-[9px] text-white/30 mt-1 text-right">
-                    {new Date(m.criadoEm).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
-                  </p>
-                </div>
-              </div>
-            ))
-          )}
-        </div>
-
-        {/* Input de envio */}
-        <div className="flex gap-2 px-4 py-4 border-t border-white/10 shrink-0">
-          <input
-            type="text"
-            placeholder="Digite sua mensagem…"
-            value={texto}
-            onChange={(e) => setTexto(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleEnviar()}
-            className="flex-1 rounded-xl border border-white/20 bg-white/10 px-3 py-2 text-sm text-white placeholder:text-white/30 focus:border-[#00C4B4]/60 focus:outline-none"
-          />
-          <button
-            type="button"
-            disabled={!texto.trim() || enviando}
-            onClick={handleEnviar}
-            className="rounded-xl bg-[#00C4B4] px-4 py-2 text-sm font-bold text-[#0F1E34] disabled:opacity-40 transition hover:opacity-90"
-          >
-            {enviando ? '…' : '↑'}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 // ─── Card de pedido ───────────────────────────────────────────────────────────
-function CardPedido({ pedido, onAvancar, onCancelar, avancando, onContato }) {
+function CardPedido({ pedido, onAvancar, onCancelar, avancando }) {
   const [expandido, setExpandido] = useState(false);
   const prox = PROXIMO_STATUS[pedido.status];
   const corStatus = STATUS_COR[pedido.status] || 'bg-white/10 text-white/60';
@@ -422,15 +318,6 @@ function CardPedido({ pedido, onAvancar, onCancelar, avancando, onContato }) {
                 {avancando ? 'Atualizando…' : prox.label}
               </button>
             )}
-            {/* Botão de contato */}
-            <button
-              type="button"
-              onClick={() => onContato(pedido)}
-              className="rounded-xl border border-[#00C4B4]/40 px-3 py-2 text-xs text-[#00C4B4] hover:bg-[#00C4B4]/10 transition"
-              title="Enviar mensagem ao cliente"
-            >
-              💬
-            </button>
             {pedido.status === 'AGUARDANDO_CONFIRMACAO' && (
               <button
                 type="button"
@@ -452,7 +339,6 @@ function CardPedido({ pedido, onAvancar, onCancelar, avancando, onContato }) {
 export default function RestaurantePedidos() {
   const navigate = useNavigate();
   const restauranteId = sessionStorage.getItem('nelore_restaurante_id') || '';
-  const DEV_BYPASS = import.meta.env.VITE_DEV_BYPASS === 'true';
 
   const [tab, setTab] = useState('Novos');
   const [pedidos, setPedidos] = useState([]);
@@ -463,9 +349,6 @@ export default function RestaurantePedidos() {
   // Modal de entregador
   const [modalPedido, setModalPedido] = useState(null); // pedido aguardando seleção
   const [modalProx, setModalProx]     = useState(null); // próximo status
-
-  // Modal de contato com cliente
-  const [modalContato, setModalContato] = useState(null);
 
   const carregar = useCallback(async () => {
     setCarregando(true);
@@ -525,29 +408,6 @@ export default function RestaurantePedidos() {
     } finally {
       setAvancando((p) => ({ ...p, [id]: false }));
     }
-  }
-
-  function limparPedidosTeste() {
-    if (!window.confirm('Apagar todos os pedidos de teste do localStorage?')) return;
-    localStorage.removeItem('pedefacil_pedidos');
-    carregar();
-  }
-
-  async function criarPedidoTeste() {
-    await pedidosApi.criar({
-      restauranteId,
-      itens: [
-        { nome: 'NB Classic',   quantidade: 2, preco_centavos: 3290 },
-        { nome: 'Batata Frita', quantidade: 1, preco_centavos: 1490 },
-      ],
-      total_centavos: 8070,
-      forma_pagamento: 'PIX',
-      observacoes: 'Sem cebola, por favor.',
-      endereco: 'Rua das Flores, 42 — Apto 3',
-      clienteNome: 'João Silva',
-      clienteEmail: 'joao@demo.com',
-    });
-    carregar();
   }
 
   const filtrados    = pedidos.filter((p) => statusDaTab(tab).includes(p.status));
@@ -621,15 +481,6 @@ export default function RestaurantePedidos() {
               <p className="text-sm text-white/60">
                 {tab === 'Novos' ? 'Nenhum pedido aguardando.' : `Nenhum pedido em "${tab}".`}
               </p>
-              {DEV_BYPASS && (tab === 'Novos' || tab === 'Em Preparo') && (
-                <button
-                  type="button"
-                  onClick={criarPedidoTeste}
-                  className="rounded-xl border border-[#00C4B4]/50 px-4 py-2 text-xs font-semibold text-[#00C4B4] hover:bg-[#00C4B4]/10 transition"
-                >
-                  🧪 Criar pedido de teste
-                </button>
-              )}
             </div>
           ) : (
             <div className="flex flex-col gap-3">
@@ -640,30 +491,11 @@ export default function RestaurantePedidos() {
                   onAvancar={handleAvancarClick}
                   onCancelar={handleCancelar}
                   avancando={avancando[pedido.id]}
-                  onContato={setModalContato}
-                />
+                    />
               ))}
             </div>
           )}
 
-          {DEV_BYPASS && pedidos.length > 0 && (
-            <div className="mt-4 flex gap-2">
-              <button
-                type="button"
-                onClick={criarPedidoTeste}
-                className="flex-1 rounded-xl border border-dashed border-[#00C4B4]/30 py-3 text-xs text-[#00C4B4]/50 hover:border-[#00C4B4]/60 hover:text-[#00C4B4]/80 transition"
-              >
-                🧪 Simular novo pedido
-              </button>
-              <button
-                type="button"
-                onClick={limparPedidosTeste}
-                className="rounded-xl border border-dashed border-red-500/20 px-4 py-3 text-xs text-red-400/50 hover:border-red-500/40 hover:text-red-400/80 transition"
-              >
-                🗑️ Limpar
-              </button>
-            </div>
-          )}
         </main>
       </div>
 
@@ -677,13 +509,6 @@ export default function RestaurantePedidos() {
         />
       )}
 
-      {/* Modal de contato com cliente */}
-      {modalContato && (
-        <ModalContato
-          pedido={modalContato}
-          onFechar={() => setModalContato(null)}
-        />
-      )}
     </>
   );
 }

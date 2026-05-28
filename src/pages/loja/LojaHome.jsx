@@ -3,10 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { LojaHeader } from '@/components/loja/LojaHeader';
 import { LojaBottomNav } from '@/components/loja/LojaBottomNav';
 import { RocketLoader } from '@/components/RocketLoader';
-import { RESTAURANTES_MOCK } from '@/data/mockCardapio';
 import { restaurantesApi } from '@/services/api';
-
-const DEV_BYPASS = import.meta.env.VITE_DEV_BYPASS === 'true';
 
 const RESTAURANTE_ID_KEY = 'nelore_restaurante_id';
 
@@ -72,28 +69,8 @@ function CardRestaurante({ restaurante, onClick }) {
 
 export default function LojaHome() {
   const navigate = useNavigate();
-  const [restaurantes, setRestaurantes] = useState(RESTAURANTES_MOCK);
+  const [restaurantes, setRestaurantes] = useState([]);
   const [carregando, setCarregando] = useState(true);
-
-  // Em modo demo, força atualização imediata com o status real do localStorage
-  useEffect(() => {
-    if (!DEV_BYPASS) return;
-    restaurantesApi.listar().then(({ data }) => {
-      const lista = Array.isArray(data) ? data : [];
-      if (lista.length > 0) {
-        setRestaurantes(lista.map((r) => ({
-          id: r.id,
-          nome: r.nome || r.name || '',
-          tipo: r.tipo || r.categoria || 'Restaurante',
-          status: r.status || 'ABERTO',
-          taxaEntrega: r.taxaEntrega ?? r.taxa_entrega ?? 500,
-          tempoEstimado: r.tempoEstimado || '30–45 min',
-          avaliacao: r.avaliacao ?? 4.8,
-          imagem: r.imagem || r.logo || null,
-        })));
-      }
-    }).catch(() => {});
-  }, []);
   const [busca, setBusca] = useState('');
 
   useEffect(() => {
@@ -121,7 +98,7 @@ export default function LojaHome() {
             imagem: r.imagem || r.logo || null,
           })));
         }
-      } catch { /* mantém mock */ } finally {
+      } catch { /* silencioso */ } finally {
         clearTimeout(timeoutSeguranca);
         if (!cancelado) setCarregando(false);
       }

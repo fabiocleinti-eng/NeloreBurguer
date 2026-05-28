@@ -7,13 +7,6 @@ import { RocketLoader } from '@/components/RocketLoader';
 import { cardapioApi } from '@/services/api';
 import { useCart } from '@/context/CartContext';
 
-const MOCK_ITENS = [1, 2, 3, 4].map((n) => ({
-  id: `mock-${n}`,
-  nome: `Produto ${n}`,
-  preco: 32.9,
-  imagem: imgCarrossel,
-}));
-
 function normalizeItens(raw) {
   if (!Array.isArray(raw)) return [];
   return raw.map((p) => {
@@ -37,7 +30,6 @@ export default function LojaCategoria() {
   const [itens, setItens] = useState([]);
   const [titulo, setTitulo] = useState('');
   const [carregando, setCarregando] = useState(true);
-  const [usandoMock, setUsandoMock] = useState(false);
   const [adicionados, setAdicionados] = useState({});
 
   useEffect(() => {
@@ -62,16 +54,8 @@ export default function LojaCategoria() {
             '';
           setTitulo(primeiroTitulo);
           setItens(normalizeItens(lista));
-        } else {
-          setItens(MOCK_ITENS);
-          setUsandoMock(true);
         }
-      } catch {
-        if (!cancelado) {
-          setItens(MOCK_ITENS);
-          setUsandoMock(true);
-        }
-      } finally {
+      } catch { /* silencioso — lista permanece vazia */ } finally {
         if (!cancelado) setCarregando(false);
       }
     }
@@ -108,9 +92,6 @@ export default function LojaCategoria() {
             <h1 className="text-lg font-bold text-white">{titulo}</h1>
           )}
         </div>
-        {usandoMock && (
-          <p className="mt-1 text-xs text-white/60 pl-7">Cardápio demo — aguardando microserviço.</p>
-        )}
       </div>
 
       {/* Conteúdo branco */}

@@ -2,24 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import batata from '@assets/images/batata.png';
 import hamburguer from '@assets/images/hamburguer.png';
-import { TOKEN_KEY, persistTokenFromResponse, usuariosApi, restauranteApi } from '@/services/api';
-
-const DEV_BYPASS = import.meta.env.VITE_DEV_BYPASS === 'true';
-
-// ─── Token fake dev ───────────────────────────────────────────────────────────
-function gerarTokenFake(role = 'USER') {
-  const header = btoa(JSON.stringify({ alg: 'HS256', typ: 'JWT' }));
-  const payload = btoa(JSON.stringify({
-    sub: `dev-${role.toLowerCase()}`,
-    id: `dev-${role.toLowerCase()}`,
-    nome: role === 'RESTAURANTE' ? 'Restaurante Demo' : 'Dev User',
-    email: `dev@nelore.local`,
-    role,
-    exp: Math.floor(Date.now() / 1000) + 60 * 60 * 8,
-    iat: Math.floor(Date.now() / 1000),
-  }));
-  return `${header}.${payload}.dev-signature-fake`;
-}
+import { persistTokenFromResponse, usuariosApi, restauranteApi } from '@/services/api';
 
 // ─── Formulário Usuário ───────────────────────────────────────────────────────
 function FormUsuario() {
@@ -74,14 +57,6 @@ function FormUsuario() {
         </Link>
       </div>
 
-      {/* Dev bypass */}
-      {DEV_BYPASS && (
-        <button type="button"
-          onClick={() => { sessionStorage.setItem(TOKEN_KEY, gerarTokenFake('USER')); navigate('/home', { replace: true }); }}
-          className="mt-1 w-full rounded-lg border-2 border-dashed border-white/40 bg-white/15 py-2 text-xs font-semibold text-white hover:bg-white/25">
-          ⚠️ Modo dev — entrar sem backend
-        </button>
-      )}
     </div>
   );
 }
@@ -141,14 +116,6 @@ function FormRestaurante() {
         </Link>
       </div>
 
-      {/* Dev bypass */}
-      {DEV_BYPASS && (
-        <button type="button"
-          onClick={() => { sessionStorage.setItem(TOKEN_KEY, gerarTokenFake('RESTAURANTE')); navigate('/restaurante/dashboard', { replace: true }); }}
-          className="mt-1 w-full rounded-lg border-2 border-dashed border-[#00C4B4]/40 bg-[#00C4B4]/10 py-2 text-xs font-semibold text-[#00C4B4] hover:bg-[#00C4B4]/20">
-          ⚠️ Modo dev — entrar sem backend
-        </button>
-      )}
     </div>
   );
 }

@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { LojaHeader } from '@/components/loja/LojaHeader';
 import { LojaBottomNav } from '@/components/loja/LojaBottomNav';
 import { RocketLoader } from '@/components/RocketLoader';
-import { pedidosApi, mensagensApi } from '@/services/api';
+import { pedidosApi } from '@/services/api';
 
 const STATUS_LABEL = {
   pendente: { label: 'Pendente', cor: 'bg-yellow-100 text-yellow-700' },
@@ -27,28 +27,23 @@ function StatusBadge({ status }) {
 }
 
 export default function LojaPedidos() {
-  const [pedidos,   setPedidos]   = useState([]);
-  const [mensagens, setMensagens] = useState([]);
+  const [pedidos,    setPedidos]   = useState([]);
   const [carregando, setCarregando] = useState(true);
-  const [erro, setErro] = useState('');
+  const [erro,       setErro]       = useState('');
 
   useEffect(() => {
     let cancelado = false;
-    Promise.all([
-      pedidosApi.meusPedidos(),
-      mensagensApi.listarParaMim().catch(() => ({ data: [] })),
-    ])
-      .then(([resPedidos, resMensagens]) => {
+    pedidosApi.meusPedidos()
+      .then(({ data }) => {
         if (cancelado) return;
-        const lista = Array.isArray(resPedidos.data)
-          ? resPedidos.data
-          : Array.isArray(resPedidos.data?.pedidos)
-            ? resPedidos.data.pedidos
-            : Array.isArray(resPedidos.data?.data)
-              ? resPedidos.data.data
+        const lista = Array.isArray(data)
+          ? data
+          : Array.isArray(data?.pedidos)
+            ? data.pedidos
+            : Array.isArray(data?.data)
+              ? data.data
               : [];
         setPedidos(lista);
-        setMensagens(Array.isArray(resMensagens.data) ? resMensagens.data : []);
       })
       .catch((err) => {
         if (cancelado) return;

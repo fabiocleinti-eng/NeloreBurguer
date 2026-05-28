@@ -2,8 +2,6 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { persistTokenFromResponse, restauranteApi } from '@/services/api';
 
-const DEV_BYPASS = import.meta.env.VITE_DEV_BYPASS === 'true';
-
 /** Extrai o ID do restaurante do payload JWT */
 function extrairRestauranteIdDoToken(token) {
   try {
@@ -12,21 +10,6 @@ function extrairRestauranteIdDoToken(token) {
   } catch {
     return null;
   }
-}
-
-function gerarTokenRestauranteFake() {
-  const header = btoa(JSON.stringify({ alg: 'HS256', typ: 'JWT' }));
-  const payload = btoa(JSON.stringify({
-    sub: 'dev-restaurante-001',
-    id: 'dev-restaurante-001',
-    restauranteId: 'dev-restaurante-001',
-    nome: 'Nelore Burger',
-    email: 'demo@restaurante.local',
-    role: 'RESTAURANTE',
-    exp: Math.floor(Date.now() / 1000) + 60 * 60 * 8,
-    iat: Math.floor(Date.now() / 1000),
-  }));
-  return `${header}.${payload}.dev-signature-fake`;
 }
 
 export default function RestauranteLogin() {
@@ -125,26 +108,6 @@ export default function RestauranteLogin() {
           </button>
         </div>
       </form>
-
-      {/* Modo dev */}
-      {DEV_BYPASS && (
-        <div className="mt-4 w-full max-w-[300px]">
-          <button
-            type="button"
-            onClick={() => {
-              const fakeToken = gerarTokenRestauranteFake();
-              sessionStorage.setItem('nelore_jwt', fakeToken);
-              // Salva o ID do restaurante fake para o painel usar
-              const restId = extrairRestauranteIdDoToken(fakeToken);
-              if (restId) sessionStorage.setItem('nelore_restaurante_id', restId);
-              navigate('/restaurante/dashboard', { replace: true });
-            }}
-            className="w-full rounded-lg border-2 border-dashed border-[#00C4B4]/40 bg-[#00C4B4]/10 py-2 text-xs font-semibold text-[#00C4B4] hover:bg-[#00C4B4]/20"
-          >
-            ⚠️ Modo dev — entrar sem backend
-          </button>
-        </div>
-      )}
 
       {/* Voltar */}
       <button

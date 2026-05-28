@@ -3,16 +3,14 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import fotoCards from '@assets/images/fotoCards.png';
 import { LojaBottomNav } from '@/components/loja/LojaBottomNav';
 import { RocketLoader } from '@/components/RocketLoader';
-import { CATEGORIAS, RESTAURANTES_MOCK } from '@/data/mockCardapio';
 import { cardapioApi, restaurantesApi } from '@/services/api';
 
 export default function LojaRestaurante() {
   const { restauranteId } = useParams();
   const navigate = useNavigate();
 
-  const mockRestaurante = RESTAURANTES_MOCK.find((r) => r.id === restauranteId) || { nome: 'Restaurante', tipo: '' };
-  const [restaurante, setRestaurante] = useState(mockRestaurante);
-  const [categorias, setCategorias] = useState(CATEGORIAS);
+  const [restaurante, setRestaurante] = useState(null);
+  const [categorias, setCategorias] = useState([]);
   const [carregando, setCarregando] = useState(true);
 
   useEffect(() => {
@@ -41,7 +39,7 @@ export default function LojaRestaurante() {
             descricao: cat.descricao || '',
           })));
         }
-      } catch { /* mantém mock já carregado */ } finally {
+      } catch { /* silencioso */ } finally {
         clearTimeout(timeoutSeguranca);
         if (!cancelado) setCarregando(false);
       }
