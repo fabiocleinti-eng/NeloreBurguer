@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { clearStoredToken, getStoredToken, restaurantesApi } from '@/services/api';
-import { activatePreviewSession } from '@/utils/previewAccess';
+import { clearStoredToken, getStoredToken, restaurantesApi, restaurantePedidosApi } from '@/services/api';
+import { activatePreviewSession, activateOwnerPreview } from '@/utils/previewAccess';
 
 function resolverRestauranteId() {
   const salvo = sessionStorage.getItem('nelore_restaurante_id');
@@ -22,6 +22,7 @@ const CARDS = [
   { icon: '📦', titulo: 'Pedidos',        descricao: 'Acompanhe e gerencie os pedidos recebidos', rota: '/restaurante/pedidos' },
   { icon: '💰', titulo: 'Financeiro',     descricao: 'Vendas do dia e entradas por pagamento',    rota: '/restaurante/financeiro' },
   { icon: '🧑‍🍳', titulo: 'Entregadores',  descricao: 'Cadastre e gerencie seus entregadores',     rota: '/restaurante/entregadores' },
+  { icon: '⭐', titulo: 'Avaliações',     descricao: 'Veja o feedback dos seus clientes',         rota: '/restaurante/avaliacoes' },
 ];
 
 function AvatarRestaurante({ nome, imagem }) {
@@ -73,6 +74,25 @@ export default function RestauranteDashboard() {
     return nome ? { nome, imagem: null, tipo: '', status: 'ABERTO' } : null;
   });
   const [salvandoStatus, setSalvandoStatus] = useState(false);
+  const [qtdNovos, setQtdNovos] = useState(0);
+  const [piscando, setPiscando] = useState(false);
+  const qtdNovosRef = useRef(-1);
+
+  function tocarSom() {
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      [0, 180, 360].forEach((delay) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain); gain.connect(ctx.destination);
+        osc.frequency.value = 880;
+        gain.gain.setValueAtTime(0.3, ctx.currentTime + delay / 1000);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + delay / 1000 + 0.2);
+        osc.start(ctx.currentTime + delay / 1000);
+        osc.stop(ctx.currentTime + delay / 1000 + 0.25);
+      });
+    } catch { /* sem suporte */ }
+  }
 
   useEffect(() => {
     const restauranteId = resolverRestauranteId();
@@ -90,6 +110,31 @@ export default function RestauranteDashboard() {
       .catch(() => {});
   }, []);
 
+  useEffect(() => {
+    const rid = resolverRestauranteId();
+    if (!rid) return;
+
+    async function verificarNovos() {
+      try {
+        const { data } = await restaurantePedidosApi.listar(rid);
+        const lista = Array.isArray(data) ? data : data?.data ?? [];
+        const novos = lista.filter(p => p.status === 'AGUARDANDO_CONFIRMACAO').length;
+        setQtdNovos(novos);
+
+        if (qtdNovosRef.current >= 0 && novos > qtdNovosRef.current) {
+          setPiscando(true);
+          tocarSom();
+        }
+        if (novos === 0) setPiscando(false);
+        qtdNovosRef.current = novos;
+      } catch { /* silencioso */ }
+    }
+
+    verificarNovos();
+    const interval = setInterval(verificarNovos, 12_000);
+    return () => clearInterval(interval);
+  }, []);
+
   async function handleToggleStatus(novoStatus) {
     const restauranteId = resolverRestauranteId();
     if (!restauranteId) return;
@@ -105,6 +150,7 @@ export default function RestauranteDashboard() {
   function handleVerLoja() {
     const id = resolverRestauranteId();
     activatePreviewSession();
+    activateOwnerPreview();
     navigate(`/loja/restaurante/${id || ''}`);
   }
 
@@ -159,21 +205,40 @@ export default function RestauranteDashboard() {
 
         {/* Cards de navegação */}
         <div className="flex flex-col gap-3">
-          {CARDS.map((card) => (
-            <button
-              key={card.titulo}
-              type="button"
-              onClick={() => navigate(card.rota)}
-              className="flex items-center gap-5 rounded-2xl border-2 border-[#00C4B4] bg-[#00C4B4]/10 px-6 py-4 text-left transition hover:opacity-90 active:scale-95"
-            >
-              <span className="text-3xl">{card.icon}</span>
-              <div>
-                <p className="text-base font-bold text-white">{card.titulo}</p>
-                <p className="text-xs text-white/60">{card.descricao}</p>
-              </div>
-              <span className="ml-auto text-xl text-[#00C4B4]">›</span>
-            </button>
-          ))}
+          {CARDS.map((card) => {
+            const isPedidos = card.titulo === 'Pedidos';
+            const temNovos = isPedidos && qtdNovos > 0;
+            return (
+              <button
+                key={card.titulo}
+                type="button"
+                onClick={() => { if (isPedidos) setPiscando(false); navigate(card.rota); }}
+                className={`flex items-center gap-5 rounded-2xl border-2 px-6 py-4 text-left transition active:scale-95
+                  ${temNovos && piscando
+                    ? 'border-amber-400 bg-amber-400/20 animate-pulse shadow-[0_0_18px_rgba(251,191,36,0.4)]'
+                    : temNovos
+                      ? 'border-amber-400/70 bg-amber-400/10'
+                      : 'border-[#00C4B4] bg-[#00C4B4]/10 hover:opacity-90'
+                  }`}
+              >
+                <span className="text-3xl">{card.icon}</span>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <p className="text-base font-bold text-white">{card.titulo}</p>
+                    {temNovos && (
+                      <span className="inline-flex items-center justify-center rounded-full bg-amber-400 px-2 py-0.5 text-[11px] font-extrabold text-[#0F1E34]">
+                        {qtdNovos} novo{qtdNovos > 1 ? 's' : ''}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs text-white/60">
+                    {temNovos ? `${qtdNovos} pedido${qtdNovos > 1 ? 's' : ''} aguardando confirmação!` : card.descricao}
+                  </p>
+                </div>
+                <span className={`ml-auto text-xl ${temNovos ? 'text-amber-400' : 'text-[#00C4B4]'}`}>›</span>
+              </button>
+            );
+          })}
 
           {/* Ver minha loja */}
           <button

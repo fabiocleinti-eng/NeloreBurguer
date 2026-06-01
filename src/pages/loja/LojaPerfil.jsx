@@ -108,7 +108,13 @@ function EditarPerfil({ usuario }) {
       setForm((f) => ({ ...f, senhaAtual: '', senhaNova: '', senhaConfirm: '' }));
       setTimeout(() => setSucesso(''), 3000);
     } catch (err) {
-      setErros({ geral: err.response?.data?.message || 'Erro ao salvar. Tente novamente.' });
+      const msg = err.response?.data?.message ?? err.message ?? '';
+      const indisponivel = err.response?.status === 404 || msg.toLowerCase().includes('not found');
+      setErros({
+        geral: indisponivel
+          ? 'Edição de perfil ainda não está disponível. Em breve!'
+          : msg || 'Erro ao salvar. Tente novamente.',
+      });
     } finally {
       setSalvando(false);
     }

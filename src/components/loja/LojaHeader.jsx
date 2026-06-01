@@ -1,22 +1,18 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import logoPequena from '@assets/images/logoPequena.png';
 import { NotificacoesPanel } from './NotificacoesPanel';
 import { totalNaoLidas, carregarNotificacoesDemo } from '@/utils/notificacoes';
+import { isOwnerPreviewActive, deactivateOwnerPreview } from '@/utils/previewAccess';
 
 function getEnderecoDisplay() {
   try { return sessionStorage.getItem('nelore_localizacao') || ''; } catch { return ''; }
-}
-
-function isPreviewDoRestaurante() {
-  try { return Boolean(sessionStorage.getItem('nelore_restaurante_id')); } catch { return false; }
 }
 
 export function LojaHeader() {
   const navigate = useNavigate();
   const [painelAberto, setPainelAberto] = useState(false);
   const [naoLidas, setNaoLidas] = useState(0);
-  const [modoPreview] = useState(isPreviewDoRestaurante);
+  const [modoPreview] = useState(isOwnerPreviewActive);
 
   const atualizarContador = useCallback(() => {
     setNaoLidas(totalNaoLidas());
@@ -42,7 +38,7 @@ export function LojaHeader() {
           </div>
           <button
             type="button"
-            onClick={() => navigate('/restaurante/dashboard')}
+            onClick={() => { deactivateOwnerPreview(); navigate('/restaurante/dashboard'); }}
             className="shrink-0 rounded-xl bg-amber-900 px-3 py-1 text-xs font-bold text-amber-100 hover:opacity-90 transition whitespace-nowrap"
           >
             ← Voltar ao painel
@@ -54,8 +50,8 @@ export function LojaHeader() {
 
         {/* Logo + nome */}
         <button type="button" onClick={() => navigate('/loja')} className="flex items-center gap-2 shrink-0">
-          <img src={logoPequena} alt="PedeFácil" className="h-9 w-9 object-contain" />
-          <span className="text-base font-extrabold tracking-tight text-white">PedeFácil</span>
+          <span className="text-3xl leading-none">🚀</span>
+          <span className="text-base font-extrabold tracking-tight text-white">Pede<span className="text-[#a8f0e0]">Fácil</span></span>
         </button>
 
         {/* Endereço */}

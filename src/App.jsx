@@ -23,6 +23,7 @@ import RestaurantePerfil from "@/pages/restaurante/RestaurantePerfil";
 import RestauranteLogin from "@/pages/restaurante/RestauranteLogin";
 import RestaurantePedidos from "@/pages/restaurante/RestaurantePedidos";
 import RestauranteFinanceiro from "@/pages/restaurante/RestauranteFinanceiro";
+import RestauranteAvaliacoes from "@/pages/restaurante/RestauranteAvaliacoes";
 import { getStoredToken } from "@/services/api";
 import { BrowserRouter, Navigate, Outlet, Route, Routes } from "react-router-dom";
 
@@ -32,7 +33,7 @@ function isTokenExpired(token) {
     const parts = token.split('.');
     if (parts.length !== 3) return true;
     const payload = JSON.parse(atob(parts[1]));
-    if (!payload.exp) return true;
+    if (!payload.exp) return false; // token sem exp = sem expiração definida, tratar como válido
     return Date.now() / 1000 > payload.exp;
   } catch {
     return true;
@@ -57,21 +58,33 @@ function RequireAuth() {
   return <Outlet />;
 }
 
-/** Apenas clientes (role USUARIO / USER) */
+function isRoleRestaurante(role) {
+  return role === 'RESTAURANTE' || role === 'ADMIN';
+}
+
+/** Apenas clientes (role USER / USUARIO) */
 function RequireCliente() {
   const token = getStoredToken();
   if (!token || isTokenExpired(token)) return <Navigate to="/login" replace />;
   const role = getRoleFromToken(token);
-  if (role === 'RESTAURANTE') return <Navigate to="/restaurante/dashboard" replace />;
+  if (isRoleRestaurante(role)) return <Navigate to="/restaurante/dashboard" replace />;
   return <Outlet />;
 }
 
-/** Apenas restaurantes (role RESTAURANTE) */
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/** Apenas restaurantes (role RESTAURANTE ou ADMIN) */
 function RequireRestaurante() {
   const token = getStoredToken();
   if (!token || isTokenExpired(token)) return <Navigate to="/restaurante/login" replace />;
   const role = getRoleFromToken(token);
-  if (role && role !== 'RESTAURANTE') return <Navigate to="/login" replace />;
+  if (role && !isRoleRestaurante(role)) return <Navigate to="/login" replace />;
+  // Garante que o ID do restaurante é um UUID válido; se não for, força novo login
+  const restId = sessionStorage.getItem('nelore_restaurante_id') || '';
+  if (!UUID_REGEX.test(restId)) {
+    sessionStorage.clear();
+    return <Navigate to="/restaurante/login" replace />;
+  }
   return <Outlet />;
 }
 
@@ -121,6 +134,7 @@ export default function App() {
               <Route path="/restaurante/cardapio" element={<RestauranteCardapio />} />
               <Route path="/restaurante/pedidos" element={<RestaurantePedidos />} />
               <Route path="/restaurante/financeiro" element={<RestauranteFinanceiro />} />
+              <Route path="/restaurante/avaliacoes" element={<RestauranteAvaliacoes />} />
             </Route>
 
             {/* ── 404 ── */}

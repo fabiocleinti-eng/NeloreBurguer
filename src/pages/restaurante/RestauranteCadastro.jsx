@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import fotoCapa from '@assets/images/fotoCapa.png';
 import { restauranteApi } from '@/services/api';
 
 // ─── Máscaras ────────────────────────────────────────────────────────────────
@@ -126,21 +125,15 @@ export default function RestauranteCadastro() {
     setLoading(true);
     try {
       await restauranteApi.cadastro({
+        nome: form.nome_fantasia.trim(),
         cnpj: form.cnpj.replace(/\D/g, ''),
-        razao_social: form.razao_social.trim(),
-        nome_fantasia: form.nome_fantasia.trim(),
         email: form.email.trim(),
         senha: form.senha,
-        telefone: form.telefone || undefined,
-        endereco: {
-          cep: form.cep.replace(/\D/g, ''),
-          rua: form.rua.trim(),
-          numero: form.numero.trim() || undefined,
-          complemento: form.complemento.trim() || undefined,
-          bairro: form.bairro.trim(),
-          cidade: form.cidade.trim(),
-          uf: form.uf.trim().toUpperCase(),
-        },
+        endereco_logradouro: form.rua.trim(),
+        endereco_numero: form.numero.trim() || 'S/N',
+        endereco_bairro: form.bairro.trim(),
+        endereco_cidade: form.cidade.trim(),
+        endereco_cep: form.cep.replace(/\D/g, ''),
       });
       setSucesso(true);
     } catch (err) {
@@ -182,8 +175,13 @@ export default function RestauranteCadastro() {
   return (
     <div className="flex min-h-screen flex-col items-center bg-[#0F1E34] px-4 pb-12 pt-8 font-sans text-[#00C4B4]">
 
-      <img src={fotoCapa} alt="NeloreBurguer" className="mb-1 h-[100px] w-[180px] object-contain" />
-      <p className="mb-6 text-sm font-semibold text-white/80">Cadastro de Restaurante</p>
+      <div className="mb-1 flex items-center gap-3">
+        <span className="text-5xl">🚀</span>
+        <span className="text-4xl font-extrabold tracking-tight text-white">
+          Pede<span className="text-[#00C4B4]">Fácil</span>
+        </span>
+      </div>
+      <p className="mb-6 text-sm font-semibold text-[#00C4B4]/80">Cadastro de Restaurante</p>
 
       <form onSubmit={handleSubmit} className="flex w-full max-w-[320px] flex-col gap-3">
 

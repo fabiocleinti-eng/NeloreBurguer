@@ -15,6 +15,10 @@ function getRestauranteId() {
   }
 }
 
+function getRestauranteStatus() {
+  try { return sessionStorage.getItem('nelore_restaurante_status') || 'ABERTO'; } catch { return 'ABERTO'; }
+}
+
 const TAXA_ENTREGA = 500; // centavos (R$ 5,00)
 
 function getLocalizacao() {
@@ -29,7 +33,7 @@ function getLocalizacao() {
 }
 
 function montarEnderecoPayload(dados) {
-  if (!dados) return null;
+  if (!dados) return { rua: '', numero: '', bairro: '', cidade: '', estado: '', cep: '' };
   return { rua: dados.rua || '', numero: dados.numero || '', bairro: dados.bairro || '', cidade: dados.cidade || '', estado: dados.uf || '', cep: dados.cep || '' };
 }
 
@@ -109,8 +113,11 @@ export default function LojaCarrinho() {
   const [status,      setStatus]      = useState('idle'); // idle | loading | sucesso | erro
   const [erroMsg,     setErroMsg]     = useState('');
   const [numeroPedido,setNumeroPedido]= useState(null);
+  const [trocoFinal,  setTrocoFinal]  = useState(null);
+  const [notaFinal,   setNotaFinal]   = useState(0);
 
   const { display: enderecoDisplay, dados: enderecoDados } = getLocalizacao();
+  const restauranteFechado = getRestauranteStatus() === 'FECHADO';
   const totalCentavos   = reaisParaCentavos(total);
   const totalComTaxa    = totalCentavos + TAXA_ENTREGA;           // centavos
   const totalComTaxaR   = totalComTaxa / 100;                     // reais (display)
@@ -141,11 +148,23 @@ export default function LojaCarrinho() {
 
   async function handleFinalizarPedido() {
     if (items.length === 0) return;
+    if (restauranteFechado) {
+      setErroMsg('Este restaurante está fechado no momento. Tente novamente mais tarde.');
+      setStatus('erro');
+      return;
+    }
     const erroValidacao = validarPagamento();
     if (erroValidacao) { setErroMsg(erroValidacao); setStatus('erro'); return; }
 
     setStatus('loading');
     setErroMsg('');
+
+    // Mapeia métodos de maquininha para os enums aceitos pela API
+    const mapaFormaPagamento = {
+      MAQUININHA_CREDITO: 'CARTAO_CREDITO',
+      MAQUININHA_DEBITO:  'CARTAO_DEBITO',
+    };
+    const formaPagamentoApi = mapaFormaPagamento[formaPagamentoFinal] || formaPagamentoFinal;
 
     const payload = {
       restauranteId: getRestauranteId(),
@@ -156,8 +175,7 @@ export default function LojaCarrinho() {
         precoUnitario: reaisParaCentavos(it.preco),
       })),
       endereco:       montarEnderecoPayload(enderecoDados),
-      formaPagamento: formaPagamentoFinal,
-      localPagamento,                              // 'online' | 'local'
+      formaPagamento: formaPagamentoApi,
       taxaEntrega:    TAXA_ENTREGA,
       // dinheiro
       ...(metodo === 'DINHEIRO' && notaCentavos > 0
@@ -172,6 +190,8 @@ export default function LojaCarrinho() {
     try {
       const { data } = await pedidosApi.criar(payload);
       const id = data?.pedidoId ?? data?.id ?? data?.numero ?? data?.data?.pedidoId ?? null;
+      setTrocoFinal(trocoCentavos);
+      setNotaFinal(notaCentavos);
       clearCart();
       setNumeroPedido(id);
       setStatus('sucesso');
@@ -194,11 +214,11 @@ export default function LojaCarrinho() {
             {numeroPedido && (
               <p className="text-sm text-zinc-500">Número do pedido: <span className="font-semibold text-zinc-700">#{numeroPedido}</span></p>
             )}
-            {metodo === 'DINHEIRO' && trocoCentavos != null && (
+            {metodo === 'DINHEIRO' && trocoFinal != null && (
               <div className="rounded-2xl bg-green-50 border border-green-200 px-6 py-4 text-center">
-                <p className="text-sm text-green-700">Prepare o troco de</p>
-                <p className="text-2xl font-extrabold text-green-600">{formatarReais(trocoCentavos)}</p>
-                <p className="text-xs text-green-500 mt-1">Valor informado: {formatarReais(notaCentavos)}</p>
+                <p className="text-sm text-green-700">Você receberá o troco de</p>
+                <p className="text-2xl font-extrabold text-green-600">{formatarReais(trocoFinal)}</p>
+                <p className="text-xs text-green-500 mt-1">Valor informado: {formatarReais(notaFinal)}</p>
               </div>
             )}
             {(metodo === 'MAQUININHA_CREDITO' || metodo === 'MAQUININHA_DEBITO') && (

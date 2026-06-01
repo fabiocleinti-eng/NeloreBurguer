@@ -12,6 +12,22 @@ function lerArquivoComoDataURL(file) {
   });
 }
 
+function comprimirImagem(dataURL, maxWidth = 600, quality = 0.75) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      const scale = Math.min(1, maxWidth / img.width);
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.round(img.width * scale);
+      canvas.height = Math.round(img.height * scale);
+      canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+      resolve(canvas.toDataURL('image/jpeg', quality));
+    };
+    img.onerror = () => resolve(dataURL);
+    img.src = dataURL;
+  });
+}
+
 function BotaoUpload({ onArquivo, children }) {
   const ref = useRef(null);
   return (
@@ -19,7 +35,11 @@ function BotaoUpload({ onArquivo, children }) {
       <input ref={ref} type="file" accept="image/*" className="hidden"
         onChange={async (e) => {
           const file = e.target.files?.[0];
-          if (file) onArquivo(file, await lerArquivoComoDataURL(file));
+          if (file) {
+            const dataURL = await lerArquivoComoDataURL(file);
+            const comprimida = await comprimirImagem(dataURL);
+            onArquivo(file, comprimida);
+          }
           e.target.value = '';
         }}
       />
@@ -382,40 +402,56 @@ function TabItens() {
           <p className="mt-1 text-xs text-white/30">Crie uma categoria primeiro, depois clique em "+ Novo Item".</p>
         </div>
       ) : (
-        itens.map((item) => (
-          <div key={item.id} className="flex items-start gap-3 rounded-2xl border border-[#00C4B4]/30 bg-[#1A2B4A]/60 px-4 py-4">
-            {/* Foto do item */}
-            <div className="h-14 w-14 shrink-0 overflow-hidden rounded-xl border border-[#00C4B4]/20 bg-[#0F1E34]">
-              {item.imagem ? (
-                <img src={item.imagem} alt={item.nome} className="h-full w-full object-cover" />
-              ) : (
-                <div className="flex h-full w-full items-center justify-center text-xl opacity-20">🍽️</div>
-              )}
+        categorias
+          .map((cat) => ({ ...cat, itens: itens.filter((i) => i._categoriaId === cat.id) }))
+          .filter((cat) => cat.itens.length > 0)
+          .map((cat) => (
+            <div key={cat.id} className="flex flex-col gap-2">
+              <p className="text-xs font-bold uppercase tracking-wider text-[#00C4B4] mt-2">{cat.titulo || cat.nome}</p>
+              {cat.itens.map((item) => (
+                <div key={item.id} className="flex items-start gap-3 rounded-2xl border border-[#00C4B4]/30 bg-[#1A2B4A]/60 px-4 py-4">
+                  <div className="h-14 w-14 shrink-0 overflow-hidden rounded-xl border border-[#00C4B4]/20 bg-[#0F1E34]">
+                    {item.imagem ? (
+                      <img src={item.imagem} alt={item.nome} className="h-full w-full object-cover" />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center text-xl opacity-20">🍽️</div>
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-white">{item.nome || item.name}</p>
+                    {item.descricao && <p className="text-xs text-white/40 truncate">{item.descricao}</p>}
+                    <p className="mt-1 font-bold text-[#00C4B4]">
+                      R$ {((item.preco_centavos ?? item.precoCentavos ?? 0) / 100).toFixed(2).replace('.', ',')}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        await cardapioApi.atualizarItem(item.id, { disponivel: !item.disponivel }).catch(() => {});
+                        carregar();
+                      }}
+                      className={`mt-1 rounded-lg px-2 py-0.5 text-xs font-semibold transition
+                        ${item.disponivel
+                          ? 'bg-green-500/20 text-green-300 hover:bg-green-500/30'
+                          : 'bg-red-500/20 text-red-300 hover:bg-red-500/30'}`}
+                    >
+                      {item.disponivel ? '✓ Disponível' : '✗ Indisponível'}
+                    </button>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      if (!window.confirm(`Excluir item "${item.nome || item.name}"?`)) return;
+                      await cardapioApi.deletarItem(item._categoriaId ?? item.categoria_id, item.id).catch(() => {});
+                      carregar();
+                    }}
+                    className="shrink-0 rounded-xl border border-red-500/30 px-3 py-1.5 text-xs text-red-400 hover:bg-red-500/10 transition"
+                  >
+                    Excluir
+                  </button>
+                </div>
+              ))}
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="font-semibold text-white">{item.nome || item.name}</p>
-              <p className="text-xs text-[#00C4B4]/80">{item._categoriaTitulo}</p>
-              {item.descricao && <p className="text-xs text-white/40 truncate">{item.descricao}</p>}
-              <p className="mt-1 font-bold text-[#00C4B4]">
-                R$ {((item.preco_centavos ?? item.precoCentavos ?? 0) / 100).toFixed(2).replace('.', ',')}
-              </p>
-              <p className={`text-xs ${item.disponivel ? 'text-green-400' : 'text-red-400'}`}>
-                {item.disponivel ? 'Disponível' : 'Indisponível'}
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={async () => {
-                if (!window.confirm(`Excluir item "${item.nome || item.name}"?`)) return;
-                await cardapioApi.deletarItem(item._categoriaId ?? item.categoria_id, item.id).catch(() => {});
-                carregar();
-              }}
-              className="ml-3 shrink-0 rounded-xl border border-red-500/30 px-3 py-1.5 text-xs text-red-400 hover:bg-red-500/10 transition"
-            >
-              Excluir
-            </button>
-          </div>
-        ))
+          ))
       )}
     </div>
   );

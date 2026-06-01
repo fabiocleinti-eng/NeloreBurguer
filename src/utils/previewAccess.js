@@ -49,3 +49,18 @@ export function activatePreviewSession() {
   const exp = Date.now() + getPreviewDurationMs();
   sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ exp }));
 }
+
+// ── Flag de preview do próprio restaurante ──────────────────────────────────
+const OWNER_PREVIEW_KEY = 'nelore_owner_preview';
+
+export function activateOwnerPreview() {
+  sessionStorage.setItem(OWNER_PREVIEW_KEY, '1');
+}
+
+export function deactivateOwnerPreview() {
+  sessionStorage.removeItem(OWNER_PREVIEW_KEY);
+}
+
+export function isOwnerPreviewActive() {
+  return sessionStorage.getItem(OWNER_PREVIEW_KEY) === '1';
+}

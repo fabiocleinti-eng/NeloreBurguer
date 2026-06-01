@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { LojaHeader } from '@/components/loja/LojaHeader';
 import { LojaBottomNav } from '@/components/loja/LojaBottomNav';
 import { RocketLoader } from '@/components/RocketLoader';
-import { pedidosApi, entregadoresApi } from '@/services/api';
+import { pedidosApi, entregadoresApi, restaurantesApi } from '@/services/api';
 import { notificarStatusPedido } from '@/utils/notificacoes';
 
 /* ── Configuração dos status ─────────────────────────────── */
@@ -323,7 +323,6 @@ function formatarData(d) {
 }
 
 function normalizarPedido(raw) {
-  // Suporta tanto endereco aninhado quanto campos planos (enderecoRua, etc.)
   const end = raw.endereco ?? {
     rua: raw.enderecoRua,
     numero: raw.enderecoNumero,
@@ -333,7 +332,17 @@ function normalizarPedido(raw) {
     estado: raw.enderecoEstado,
     cep: raw.enderecoCep,
   };
-  return { ...raw, endereco: end };
+  return {
+    ...raw,
+    endereco: end,
+    criadoEm:        raw.criadoEm        ?? raw.criado_em              ?? null,
+    subtotal:        raw.subtotal        ?? raw.subtotal_centavos       ?? 0,
+    taxaEntrega:     raw.taxaEntrega     ?? raw.taxa_entrega_centavos   ?? 0,
+    desconto:        raw.desconto        ?? 0,
+    total:           raw.total           ?? raw.total_centavos          ?? 0,
+    formaPagamento:  raw.formaPagamento  ?? raw.forma_pagamento         ?? null,
+    restauranteNome: raw.restauranteNome ?? raw.nomeRestaurante         ?? raw.restaurante?.nome ?? null,
+  };
 }
 
 /* ── Página principal ────────────────────────────────────── */
@@ -352,7 +361,7 @@ export default function LojaPedidoDetalhe() {
     let canceladoEffect = false;
 
     pedidosApi.buscarPorId(id)
-      .then((resPedido) => {
+      .then(async (resPedido) => {
         if (canceladoEffect) return;
 
         const raw = resPedido.data?.data ?? resPedido.data;
@@ -361,7 +370,17 @@ export default function LojaPedidoDetalhe() {
           notificarStatusPedido(id, p.status);
         }
         statusAnterior.current = p.status;
-        setPedido(p);
+
+        // Busca nome do restaurante se não veio na resposta
+        if (!p.restauranteNome && p.restauranteId) {
+          try {
+            const { data: rest } = await restaurantesApi.buscarPorId(p.restauranteId);
+            const nome = rest?.data?.nome ?? rest?.nome ?? null;
+            if (nome) p.restauranteNome = nome;
+          } catch { /* silencioso */ }
+        }
+
+        if (!canceladoEffect) setPedido(p);
       })
       .catch((err) => {
         if (canceladoEffect) return;
@@ -444,7 +463,13 @@ export default function LojaPedidoDetalhe() {
           {!carregando && pedido && (
             <div className="flex flex-col gap-4">
 
-              {/* Data */}
+              {/* Restaurante + Data */}
+              {pedido.restauranteNome && (
+                <div className="flex items-center gap-2">
+                  <span className="text-base">🍽️</span>
+                  <p className="text-sm font-semibold text-zinc-700">{pedido.restauranteNome}</p>
+                </div>
+              )}
               {pedido.criadoEm && (
                 <p className="text-xs text-zinc-400">
                   Realizado em {formatarData(pedido.criadoEm)}

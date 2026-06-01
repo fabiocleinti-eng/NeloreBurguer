@@ -3,19 +3,19 @@ import { Link } from 'react-router-dom';
 import { LojaHeader } from '@/components/loja/LojaHeader';
 import { LojaBottomNav } from '@/components/loja/LojaBottomNav';
 import { RocketLoader } from '@/components/RocketLoader';
-import { pedidosApi } from '@/services/api';
+import { pedidosApi, restaurantesApi } from '@/services/api';
 
 const STATUS_LABEL = {
-  pendente: { label: 'Pendente', cor: 'bg-yellow-100 text-yellow-700' },
-  confirmado: { label: 'Confirmado', cor: 'bg-blue-100 text-blue-700' },
-  preparando: { label: 'Preparando', cor: 'bg-orange-100 text-orange-700' },
-  saiu: { label: 'Saiu para entrega', cor: 'bg-purple-100 text-purple-700' },
-  entregue: { label: 'Entregue', cor: 'bg-green-100 text-green-700' },
-  cancelado: { label: 'Cancelado', cor: 'bg-red-100 text-red-600' },
+  AGUARDANDO_CONFIRMACAO: { label: 'Aguardando', cor: 'bg-yellow-100 text-yellow-700' },
+  CONFIRMADO:             { label: 'Confirmado', cor: 'bg-blue-100 text-blue-700' },
+  EM_PREPARO:             { label: 'Em Preparo', cor: 'bg-orange-100 text-orange-700' },
+  EM_ENTREGA:             { label: 'Saiu p/ entrega', cor: 'bg-purple-100 text-purple-700' },
+  ENTREGUE:               { label: 'Entregue', cor: 'bg-green-100 text-green-700' },
+  CANCELADO:              { label: 'Cancelado', cor: 'bg-red-100 text-red-600' },
 };
 
 function StatusBadge({ status }) {
-  const s = STATUS_LABEL[status?.toLowerCase()] ?? {
+  const s = STATUS_LABEL[status?.toUpperCase()] ?? {
     label: status ?? 'Desconhecido',
     cor: 'bg-zinc-100 text-zinc-600',
   };
@@ -28,13 +28,14 @@ function StatusBadge({ status }) {
 
 export default function LojaPedidos() {
   const [pedidos,    setPedidos]   = useState([]);
+  const [nomes,      setNomes]     = useState({});
   const [carregando, setCarregando] = useState(true);
   const [erro,       setErro]       = useState('');
 
   useEffect(() => {
     let cancelado = false;
     pedidosApi.meusPedidos()
-      .then(({ data }) => {
+      .then(async ({ data }) => {
         if (cancelado) return;
         const lista = Array.isArray(data)
           ? data
@@ -44,6 +45,17 @@ export default function LojaPedidos() {
               ? data.data
               : [];
         setPedidos(lista);
+
+        // Busca nomes dos restaurantes únicos
+        const ids = [...new Set(lista.map(p => p.restauranteId).filter(Boolean))];
+        const map = {};
+        await Promise.all(ids.map(async (rid) => {
+          try {
+            const { data: rest } = await restaurantesApi.buscarPorId(rid);
+            map[rid] = rest?.data?.nome ?? rest?.nome ?? null;
+          } catch { /* silencioso */ }
+        }));
+        if (!cancelado) setNomes(map);
       })
       .catch((err) => {
         if (cancelado) return;
@@ -97,15 +109,13 @@ export default function LojaPedidos() {
                 const id = p.id ?? p.pedidoId ?? p.numero ?? i;
                 const data = p.criadoEm ?? p.createdAt ?? p.data ?? null;
                 const itens = Array.isArray(p.itens) ? p.itens : [];
+                const restauranteNome = p.restauranteNome ?? p.nomeRestaurante ?? p.restaurante?.nome ?? nomes[p.restauranteId] ?? null;
 
                 // ms-pedidos retorna valores em centavos → divide por 100
                 const totalReais =
                   p.total != null
                     ? (Number(p.total) / 100).toFixed(2).replace('.', ',')
                     : null;
-
-                // Mensagens não lidas deste pedido
-                const msgNaoLidas = mensagens.filter((m) => m.pedidoId === id && !m.lida).length;
 
                 return (
                   <li key={id}>
@@ -118,17 +128,18 @@ export default function LojaPedidos() {
                         <span className="text-sm font-bold text-zinc-800">
                           Pedido #{typeof id === 'string' ? id.slice(-6).toUpperCase() : id}
                         </span>
-                        {msgNaoLidas > 0 && (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-[#3CB371] px-2 py-0.5 text-[10px] font-bold text-white animate-pulse">
-                            💬 {msgNaoLidas}
-                          </span>
-                        )}
                       </div>
                       <StatusBadge status={p.status} />
                     </div>
 
+                    {restauranteNome && (
+                      <p className="mt-1 flex items-center gap-1 text-xs font-semibold text-zinc-600">
+                        <span>🍽️</span> {restauranteNome}
+                      </p>
+                    )}
+
                     {data && (
-                      <p className="mt-1 text-xs text-zinc-400">
+                      <p className="mt-0.5 text-xs text-zinc-400">
                         {new Date(data).toLocaleString('pt-BR')}
                       </p>
                     )}

@@ -1,5 +1,4 @@
 import { useNavigate } from 'react-router-dom';
-import fotoCapa from '@assets/images/fotoCapa.png';
 import batata from '@assets/images/batata.png';
 import hamburguer from '@assets/images/hamburguer.png';
 
@@ -10,13 +9,11 @@ export default function Inicio() {
     <div className="flex min-h-screen flex-col items-center justify-between bg-[#636363] px-4 pb-10 pt-8 font-sans text-[#FFA801]">
 
       {/* Logo */}
-      <div className="flex flex-col items-center gap-2 pt-6">
-        <img
-          src={fotoCapa}
-          alt="NeloreBurguer"
-          className="h-[143px] w-[253px] max-w-full object-contain"
-        />
-        <p className="mt-2 text-center text-sm text-white/70">
+      <div className="flex flex-col items-center gap-1 pt-6">
+        <span className="text-6xl" style={{ filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.3))' }}>🚀</span>
+        <h1 className="text-4xl font-extrabold tracking-tight text-white drop-shadow-md">Pede<span className="text-white/75">Fácil</span></h1>
+        <p className="text-xs text-white/55 tracking-wide">Peça rápido, receba fácil</p>
+        <p className="mt-3 text-center text-sm text-white/70">
           Bem-vindo! Como deseja continuar?
         </p>
       </div>

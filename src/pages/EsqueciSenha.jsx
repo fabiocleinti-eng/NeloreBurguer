@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import fotoCapa from '@assets/images/fotoCapa.png';
 import batata from '@assets/images/batata.png';
 import hamburguer from '@assets/images/hamburguer.png';
 import { usuariosApi } from '@/services/api';
@@ -45,12 +44,10 @@ export default function EsqueciSenha() {
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-[#636363] px-4 pb-10 pt-8 font-sans text-[13px] text-[#FFA801]">
-      <div className="flex flex-row items-center justify-center pb-5">
-        <img
-          src={fotoCapa}
-          alt="NeloreBuguer"
-          className="h-[143px] w-[253px] max-w-full object-contain"
-        />
+      <div className="flex flex-col items-center gap-1 pb-5">
+        <span className="text-5xl" style={{ filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.3))' }}>🚀</span>
+        <h1 className="text-3xl font-extrabold tracking-tight text-white drop-shadow-md">Pede<span className="text-white/75">Fácil</span></h1>
+        <p className="text-xs text-white/55 tracking-wide">Peça rápido, receba fácil</p>
       </div>
 
       {enviado ? (

@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { RocketLoader } from '@/components/RocketLoader';
-import { restaurantePedidosApi, pedidosApi, entregadoresApi } from '@/services/api';
+import { restaurantePedidosApi, pedidosApi, entregadoresApi, getStoredToken } from '@/services/api';
 
 // ─── Constantes de status ─────────────────────────────────────────────────────
 const STATUS_LABEL = {
@@ -22,20 +22,58 @@ const STATUS_COR = {
   CANCELADO:              'bg-red-500/20    text-red-300    border-red-500/40',
 };
 
-const PROXIMO_STATUS = {
-  AGUARDANDO_CONFIRMACAO: { status: 'CONFIRMADO', label: '✅ Confirmar pedido',       precisaEntregador: false },
-  CONFIRMADO:             { status: 'EM_PREPARO', label: '🍳 Iniciar preparo',         precisaEntregador: false },
-  EM_PREPARO:             { status: 'EM_ENTREGA', label: '🛵 Enviar para entrega',     precisaEntregador: true  },
-  EM_ENTREGA:             { status: 'ENTREGUE',   label: '📦 Marcar como entregue',   precisaEntregador: false },
+const LIMITES_ATRASO = {
+  AGUARDANDO_CONFIRMACAO: { ambar: 5,  vermelho: 10 },
+  CONFIRMADO:             { ambar: 10, vermelho: 20 },
+  EM_PREPARO:             { ambar: 20, vermelho: 35 },
+  EM_ENTREGA:             { ambar: 30, vermelho: 50 },
 };
 
-const TABS = ['Novos', 'Em Preparo', 'Em Entrega', 'Concluídos'];
+function minutosDecorridos(criadoEm) {
+  if (!criadoEm) return 0;
+  return (Date.now() - new Date(criadoEm).getTime()) / 60_000;
+}
 
-function statusDaTab(tab) {
-  if (tab === 'Novos')      return ['AGUARDANDO_CONFIRMACAO', 'CONFIRMADO'];
-  if (tab === 'Em Preparo') return ['EM_PREPARO'];
-  if (tab === 'Em Entrega') return ['EM_ENTREGA'];
-  return                           ['ENTREGUE', 'CANCELADO'];
+function TempoDecorrido({ criadoEm, status }) {
+  const [mins, setMins] = useState(() => minutosDecorridos(criadoEm));
+
+  useEffect(() => {
+    const id = setInterval(() => setMins(minutosDecorridos(criadoEm)), 1_000);
+    return () => clearInterval(id);
+  }, [criadoEm]);
+
+  const limites = LIMITES_ATRASO[status];
+  if (!limites) return null;
+
+  const total = Math.floor(mins);
+  const h = Math.floor(total / 60);
+  const m = total % 60;
+  const display = h > 0 ? `${h}h ${m}min` : `${m}min`;
+
+  const cor = total >= limites.vermelho
+    ? 'text-red-400'
+    : total >= limites.ambar
+      ? 'text-amber-400'
+      : 'text-green-400';
+
+  return <span className={`text-[10px] font-bold ${cor}`}>⏱ {display}</span>;
+}
+
+const PROXIMO_STATUS = {
+  AGUARDANDO_CONFIRMACAO: { status: 'CONFIRMADO', label: '✅ Confirmar pedido',     precisaEntregador: false },
+  CONFIRMADO:             { status: 'EM_PREPARO', label: '🍳 Iniciar preparo',       precisaEntregador: false },
+  // EM_PREPARO: controlado pelo botão "Marcar como pronto" (estado local)
+  EM_ENTREGA:             { status: 'ENTREGUE',   label: '📦 Marcar como entregue', precisaEntregador: false },
+};
+
+const TABS = ['Novos', 'Em Preparo', 'Pronto p/ Entrega', 'Em Entrega', 'Concluídos'];
+
+function statusDaTab(tab, prontos = new Set()) {
+  if (tab === 'Novos')             return ['AGUARDANDO_CONFIRMACAO', 'CONFIRMADO'];
+  if (tab === 'Em Preparo')        return ['EM_PREPARO'];
+  if (tab === 'Pronto p/ Entrega') return ['EM_PREPARO']; // filtrado por prontos
+  if (tab === 'Em Entrega')        return ['EM_ENTREGA'];
+  return                                  ['ENTREGUE', 'CANCELADO'];
 }
 
 function formatarReais(centavos) {
@@ -54,15 +92,9 @@ function formatarData(iso) {
 // ─── Modal: Selecionar entregador ─────────────────────────────────────────────
 function ModalEntregador({ entregadores, pedidosAtivos, onConfirmar, onFechar }) {
 
-  // IDs de entregadores que já estão em uma entrega ativa
-  const ocupadosIds = new Set(
-    pedidosAtivos
-      .filter((p) => p.status === 'EM_ENTREGA' && p.entregador?.id)
-      .map((p) => p.entregador.id)
-  );
-
-  const ativos = entregadores.filter((e) => e.ativo !== false);
-  const disponiveis = ativos.filter((e) => !ocupadosIds.has(e.id));
+  // Usa o status real do entregador vindo do delivery-entregador service
+  const ativos      = entregadores.filter((e) => e.status !== 'INATIVO');
+  const disponiveis = ativos.filter((e) => e.status === 'DISPONIVEL');
 
   const [selecionado, setSelecionado] = useState(disponiveis[0]?.id ?? null);
 
@@ -83,13 +115,8 @@ function ModalEntregador({ entregadores, pedidosAtivos, onConfirmar, onFechar })
         ) : (
           <div className="flex flex-col gap-3 max-h-72 overflow-y-auto">
             {ativos.map((e) => {
-              const ocupado = ocupadosIds.has(e.id);
+              const ocupado = e.status === 'EM_ENTREGA';
               const isSel   = e.id === selecionado && !ocupado;
-
-              // Pedido ativo deste entregador (para mostrar qual entrega ele está fazendo)
-              const pedidoAtivo = ocupado
-                ? pedidosAtivos.find((p) => p.status === 'EM_ENTREGA' && p.entregador?.id === e.id)
-                : null;
 
               return (
                 <button
@@ -131,12 +158,10 @@ function ModalEntregador({ entregadores, pedidosAtivos, onConfirmar, onFechar })
                         </span>
                       )}
                     </div>
-                    {ocupado && pedidoAtivo ? (
-                      <p className="text-[10px] text-red-300/70">
-                        Pedido #{pedidoAtivo.id?.slice(-6).toUpperCase()} · {pedidoAtivo.endereco?.split(',')[0] ?? ''}
-                      </p>
+                    {ocupado ? (
+                      <p className="text-[10px] text-red-300/70">Em entrega — indisponível no momento</p>
                     ) : e.veiculo ? (
-                      <p className="text-xs text-[#00C4B4]/70">🛵 {e.veiculo}{e.placa ? ` · ${e.placa}` : ''}</p>
+                      <p className="text-xs text-[#00C4B4]/70">🛵 {typeof e.veiculo === 'object' ? e.veiculo.tipo : e.veiculo}{(typeof e.veiculo === 'object' ? e.veiculo.placa : e.placa) ? ` · ${typeof e.veiculo === 'object' ? e.veiculo.placa : e.placa}` : ''}</p>
                     ) : null}
                   </div>
 
@@ -179,7 +204,7 @@ function ModalEntregador({ entregadores, pedidosAtivos, onConfirmar, onFechar })
 }
 
 // ─── Card de pedido ───────────────────────────────────────────────────────────
-function CardPedido({ pedido, onAvancar, onCancelar, avancando }) {
+function CardPedido({ pedido, onAvancar, onCancelar, onMarcarPronto, isPronto, avancando }) {
   const [expandido, setExpandido] = useState(false);
   const prox = PROXIMO_STATUS[pedido.status];
   const corStatus = STATUS_COR[pedido.status] || 'bg-white/10 text-white/60';
@@ -199,17 +224,18 @@ function CardPedido({ pedido, onAvancar, onCancelar, avancando }) {
             <span className={`rounded-full border px-2 py-0.5 text-[10px] font-bold ${corStatus}`}>
               {STATUS_LABEL[pedido.status] ?? pedido.status}
             </span>
+            <TempoDecorrido criadoEm={pedido.criadoEm ?? pedido.criado_em} status={pedido.status} />
           </div>
           <p className="text-xs text-white/50 mt-0.5 truncate">
-            {pedido.cliente?.nome || 'Cliente'} · {pedido.itens?.length ?? 0} {pedido.itens?.length === 1 ? 'item' : 'itens'}
+            {pedido.cliente?.nome ?? `Cliente #${String(pedido.clienteId ?? '').slice(-4)}`} · {pedido.itens?.length ?? 0} {pedido.itens?.length === 1 ? 'item' : 'itens'}
           </p>
         </div>
         <div className="text-right shrink-0">
-          <p className="font-bold text-[#00C4B4] text-sm">{formatarReais(pedido.total_centavos)}</p>
-          {pedido.taxa_entrega_centavos > 0 && (
-            <p className="text-[10px] text-white/30">+ {formatarReais(pedido.taxa_entrega_centavos)} entrega</p>
+          <p className="font-bold text-[#00C4B4] text-sm">{formatarReais(pedido.total ?? pedido.total_centavos)}</p>
+          {(pedido.taxaEntrega ?? pedido.taxa_entrega_centavos) > 0 && (
+            <p className="text-[10px] text-white/30">+ {formatarReais(pedido.taxaEntrega ?? pedido.taxa_entrega_centavos)} entrega</p>
           )}
-          <p className="text-[10px] text-white/30">{formatarData(pedido.criado_em)}</p>
+          <p className="text-[10px] text-white/30">{formatarData(pedido.criadoEm ?? pedido.criado_em)}</p>
         </div>
         <span className="text-white/40 ml-1">{expandido ? '▲' : '▼'}</span>
       </button>
@@ -233,7 +259,7 @@ function CardPedido({ pedido, onAvancar, onCancelar, avancando }) {
               <div>
                 <p className="text-xs font-semibold text-purple-200">{pedido.entregador.nome}</p>
                 {pedido.entregador.veiculo && (
-                  <p className="text-[10px] text-purple-300/70">🛵 {pedido.entregador.veiculo}{pedido.entregador.placa ? ` · ${pedido.entregador.placa}` : ''}</p>
+                  <p className="text-[10px] text-purple-300/70">🛵 {typeof pedido.entregador.veiculo === 'object' ? pedido.entregador.veiculo.tipo : pedido.entregador.veiculo}{(typeof pedido.entregador.veiculo === 'object' ? pedido.entregador.veiculo.placa : pedido.entregador.placa) ? ` · ${typeof pedido.entregador.veiculo === 'object' ? pedido.entregador.veiculo.placa : pedido.entregador.placa}` : ''}</p>
                 )}
               </div>
               <span className="ml-auto text-[10px] text-purple-300/60">Entregador</span>
@@ -244,35 +270,35 @@ function CardPedido({ pedido, onAvancar, onCancelar, avancando }) {
           <div className="flex flex-col gap-1">
             {(pedido.itens || []).map((item, i) => (
               <div key={i} className="flex justify-between text-xs">
-                <span className="text-white/80">{item.quantidade ?? 1}× {item.nome || item.name || '–'}</span>
-                <span className="text-[#00C4B4]">{formatarReais((item.preco_centavos ?? item.preco ?? 0) * (item.quantidade ?? 1))}</span>
+                <span className="text-white/80">{item.quantidade ?? 1}× {item.nomeProduto ?? item.nome ?? item.name ?? '–'}</span>
+                <span className="text-[#00C4B4]">{formatarReais((item.precoUnitario ?? item.preco_centavos ?? item.preco ?? 0) * (item.quantidade ?? 1))}</span>
               </div>
             ))}
           </div>
 
           {/* Resumo de valores */}
           <div className="rounded-xl bg-white/5 px-3 py-2 flex flex-col gap-1 text-xs">
-            {pedido.subtotal_centavos != null && (
+            {(pedido.subtotal ?? pedido.subtotal_centavos) != null && (
               <div className="flex justify-between text-white/50">
                 <span>Subtotal</span>
-                <span>{formatarReais(pedido.subtotal_centavos)}</span>
+                <span>{formatarReais(pedido.subtotal ?? pedido.subtotal_centavos)}</span>
               </div>
             )}
-            {pedido.taxa_entrega_centavos != null && (
+            {(pedido.taxaEntrega ?? pedido.taxa_entrega_centavos) != null && (
               <div className="flex justify-between text-white/50">
                 <span>Taxa de entrega</span>
-                <span>{pedido.taxa_entrega_centavos === 0 ? 'Grátis' : formatarReais(pedido.taxa_entrega_centavos)}</span>
+                <span>{(pedido.taxaEntrega ?? pedido.taxa_entrega_centavos) === 0 ? 'Grátis' : formatarReais(pedido.taxaEntrega ?? pedido.taxa_entrega_centavos)}</span>
               </div>
             )}
             <div className="flex justify-between font-bold text-white border-t border-white/10 mt-1 pt-1">
               <span>Total</span>
-              <span className="text-[#00C4B4]">{formatarReais(pedido.total_centavos)}</span>
+              <span className="text-[#00C4B4]">{formatarReais(pedido.total ?? pedido.total_centavos)}</span>
             </div>
           </div>
 
           {/* Pagamento */}
-          {pedido.forma_pagamento && (() => {
-            const fp = pedido.forma_pagamento;
+          {(pedido.formaPagamento ?? pedido.forma_pagamento) && (() => {
+            const fp = pedido.formaPagamento ?? pedido.forma_pagamento;
             const local = pedido.local_pagamento === 'local';
             const labelMap = {
               PIX:                 '⚡ PIX (online)',
@@ -286,29 +312,57 @@ function CardPedido({ pedido, onAvancar, onCancelar, avancando }) {
           })()}
 
           {/* Troco */}
-          {pedido.forma_pagamento === 'DINHEIRO' && pedido.nota_dinheiro != null && (
+          {(pedido.formaPagamento ?? pedido.forma_pagamento) === 'DINHEIRO' && (pedido.nota_dinheiro ?? pedido.notaDinheiro) != null && (
             <div className="rounded-xl bg-green-500/10 border border-green-500/30 px-3 py-2 flex justify-between items-center">
               <div>
                 <p className="text-xs font-semibold text-green-300">💵 Troco a preparar</p>
-                <p className="text-[10px] text-green-300/60">Nota entregue pelo cliente: {formatarReais(pedido.nota_dinheiro)}</p>
+                <p className="text-[10px] text-green-300/60">Nota entregue pelo cliente: {formatarReais(pedido.nota_dinheiro ?? pedido.notaDinheiro)}</p>
               </div>
-              <p className="text-lg font-extrabold text-green-300">{formatarReais(pedido.troco_centavos)}</p>
+              <p className="text-lg font-extrabold text-green-300">{formatarReais(pedido.troco_centavos ?? pedido.trocoCentavos)}</p>
             </div>
           )}
 
           {/* Maquininha */}
-          {(pedido.forma_pagamento === 'MAQUININHA_CREDITO' || pedido.forma_pagamento === 'MAQUININHA_DEBITO' || pedido.forma_pagamento === 'VALE_REFEICAO') && (
+          {(['MAQUININHA_CREDITO','MAQUININHA_DEBITO','VALE_REFEICAO'].includes(pedido.formaPagamento ?? pedido.forma_pagamento)) && (
             <div className="rounded-xl bg-blue-500/10 border border-blue-500/30 px-3 py-2">
               <p className="text-xs font-semibold text-blue-300">💳 Enviar maquininha com o entregador</p>
             </div>
           )}
 
           {pedido.observacoes && <p className="text-xs text-white/40 italic">📝 {pedido.observacoes}</p>}
-          {pedido.endereco    && <p className="text-xs text-white/40">📍 {pedido.endereco}</p>}
+          {pedido.endereco && (() => {
+            const e = pedido.endereco;
+            const linha = typeof e === 'string'
+              ? e
+              : [e.rua, e.numero, e.bairro, e.cidade, e.estado].filter(Boolean).join(', ');
+            return linha ? <p className="text-xs text-white/40">📍 {linha}</p> : null;
+          })()}
 
           {/* Ações */}
           <div className="flex gap-2 mt-1">
-            {prox && (
+            {/* EM_PREPARO: dois caminhos — marcar pronto ou enviar */}
+            {pedido.status === 'EM_PREPARO' && !isPronto && (
+              <button
+                type="button"
+                disabled={avancando}
+                onClick={() => onMarcarPronto(pedido.id)}
+                className="flex-1 rounded-xl bg-green-600 py-2 text-xs font-bold text-white hover:opacity-90 disabled:opacity-50 transition"
+              >
+                ✅ Marcar como pronto
+              </button>
+            )}
+            {pedido.status === 'EM_PREPARO' && isPronto && (
+              <button
+                type="button"
+                disabled={avancando}
+                onClick={() => onAvancar(pedido, { status: 'EM_ENTREGA', label: '🛵 Enviar para entrega', precisaEntregador: true })}
+                className="flex-1 rounded-xl bg-[#00C4B4] py-2 text-xs font-bold text-[#0F1E34] hover:opacity-90 disabled:opacity-50 transition"
+              >
+                {avancando ? 'Atualizando…' : '🛵 Enviar para entrega'}
+              </button>
+            )}
+            {/* Demais status */}
+            {prox && pedido.status !== 'EM_PREPARO' && (
               <button
                 type="button"
                 disabled={avancando}
@@ -338,33 +392,99 @@ function CardPedido({ pedido, onAvancar, onCancelar, avancando }) {
 // ─── Componente Principal ─────────────────────────────────────────────────────
 export default function RestaurantePedidos() {
   const navigate = useNavigate();
-  const restauranteId = sessionStorage.getItem('nelore_restaurante_id') || '';
+  // Resolve o restauranteId — sessionStorage ou fallback via JWT
+  const restauranteId = (() => {
+    const salvo = sessionStorage.getItem('nelore_restaurante_id');
+    if (salvo) return salvo;
+    try {
+      const token = getStoredToken();
+      if (!token) return '';
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      const id = payload.restauranteId || payload.restaurante_id || payload.id || payload.sub || '';
+      if (id) sessionStorage.setItem('nelore_restaurante_id', String(id));
+      return String(id);
+    } catch { return ''; }
+  })();
 
   const [tab, setTab] = useState('Novos');
   const [pedidos, setPedidos] = useState([]);
   const [entregadores, setEntregadores] = useState([]);
   const [carregando, setCarregando] = useState(true);
   const [avancando, setAvancando] = useState({});
+  const [alertaNovo, setAlertaNovo] = useState(false);
+
+  // IDs de pedidos marcados como "pronto" (estado local — EM_PREPARO no DB)
+  const [prontos, setProntos] = useState(() => {
+    try { return new Set(JSON.parse(sessionStorage.getItem('pedidos_prontos') || '[]')); }
+    catch { return new Set(); }
+  });
+
+  function marcarPronto(id) {
+    setProntos((prev) => {
+      const next = new Set(prev);
+      next.add(id);
+      try { sessionStorage.setItem('pedidos_prontos', JSON.stringify([...next])); } catch { /* ignore */ }
+      return next;
+    });
+  }
+
+  function desmarcarPronto(id) {
+    setProntos((prev) => {
+      const next = new Set(prev);
+      next.delete(id);
+      try { sessionStorage.setItem('pedidos_prontos', JSON.stringify([...next])); } catch { /* ignore */ }
+      return next;
+    });
+  }
+
+  const qtdNovosRef = useRef(-1); // -1 = primeira carga (não alerta)
 
   // Modal de entregador
-  const [modalPedido, setModalPedido] = useState(null); // pedido aguardando seleção
-  const [modalProx, setModalProx]     = useState(null); // próximo status
+  const [modalPedido, setModalPedido] = useState(null);
+  const [modalProx, setModalProx]     = useState(null);
+
+  function tocarSom() {
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      [0, 150, 300].forEach((delay, i) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain); gain.connect(ctx.destination);
+        osc.frequency.value = 880 - i * 110;
+        gain.gain.setValueAtTime(0.3, ctx.currentTime + delay / 1000);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + delay / 1000 + 0.25);
+        osc.start(ctx.currentTime + delay / 1000);
+        osc.stop(ctx.currentTime + delay / 1000 + 0.3);
+      });
+    } catch { /* navegador sem suporte */ }
+  }
 
   const carregar = useCallback(async () => {
     setCarregando(true);
     try {
-      const [resPed, resEnt] = await Promise.all([
-        restaurantePedidosApi.listar(restauranteId),
-        entregadoresApi.listar(),
-      ]);
+      const resPed = await restaurantePedidosApi.listar(restauranteId);
       const lista = Array.isArray(resPed.data) ? resPed.data : resPed.data?.data ?? [];
-      lista.sort((a, b) => new Date(b.criado_em) - new Date(a.criado_em));
+      lista.sort((a, b) => new Date(b.criadoEm ?? b.criado_em) - new Date(a.criadoEm ?? a.criado_em));
       setPedidos(lista);
 
+      const novos = lista.filter(p => p.status === 'AGUARDANDO_CONFIRMACAO').length;
+      if (qtdNovosRef.current >= 0 && novos > qtdNovosRef.current) {
+        setAlertaNovo(true);
+        tocarSom();
+        setTimeout(() => setAlertaNovo(false), 6000);
+      }
+      qtdNovosRef.current = novos;
+    } catch (err) {
+      console.error('[RestaurantePedidos] Erro ao carregar pedidos:', err?.response?.data ?? err?.message ?? err);
+      setPedidos([]);
+    }
+
+    try {
+      const resEnt = await entregadoresApi.listar();
       const ents = Array.isArray(resEnt.data) ? resEnt.data : resEnt.data?.data ?? [];
       setEntregadores(ents);
     } catch {
-      setPedidos([]);
+      // entregadores não bloqueiam os pedidos
     } finally {
       setCarregando(false);
     }
@@ -393,6 +513,38 @@ export default function RestaurantePedidos() {
     setAvancando((p) => ({ ...p, [pedidoId]: true }));
     try {
       await restaurantePedidosApi.atualizarStatus(pedidoId, novoStatus, entregador);
+
+      // Remove do set de prontos ao enviar para entrega
+      if (novoStatus === 'EM_ENTREGA') desmarcarPronto(pedidoId);
+
+      // Sincroniza status do entregador com o status do pedido
+      if (novoStatus === 'EM_ENTREGA' && entregador?.id) {
+        await entregadoresApi.atualizarStatus(entregador.id, 'EM_ENTREGA').catch(() => {});
+      } else if (novoStatus === 'ENTREGUE' || novoStatus === 'CANCELADO') {
+        // Libera o entregador do pedido — busca nos dados atuais ou recarrega
+        const pedidoAtual = pedidos.find(p => p.id === pedidoId);
+        const entregadorId = pedidoAtual?.entregadorId
+          ?? pedidoAtual?.entregador_id
+          ?? pedidoAtual?.entregador?.id;
+
+        if (entregadorId) {
+          await entregadoresApi.atualizarStatus(entregadorId, 'DISPONIVEL').catch(() => {});
+        } else {
+          // Fallback: libera todos que estão EM_ENTREGA sem pedido ativo
+          await carregar();
+          const emEntrega = entregadores.filter(e => e.status === 'EM_ENTREGA');
+          const pedidosAtivos = pedidos.filter(p => p.status === 'EM_ENTREGA' && p.id !== pedidoId);
+          for (const ent of emEntrega) {
+            const temPedidoAtivo = pedidosAtivos.some(p =>
+              p.entregadorId === ent.id || p.entregador_id === ent.id
+            );
+            if (!temPedidoAtivo) {
+              await entregadoresApi.atualizarStatus(ent.id, 'DISPONIVEL').catch(() => {});
+            }
+          }
+        }
+      }
+
       await carregar();
     } finally {
       setAvancando((p) => ({ ...p, [pedidoId]: false }));
@@ -410,9 +562,14 @@ export default function RestaurantePedidos() {
     }
   }
 
-  const filtrados    = pedidos.filter((p) => statusDaTab(tab).includes(p.status));
+  const filtrados = pedidos.filter((p) => {
+    if (tab === 'Em Preparo')        return p.status === 'EM_PREPARO' && !prontos.has(p.id);
+    if (tab === 'Pronto p/ Entrega') return p.status === 'EM_PREPARO' && prontos.has(p.id);
+    return statusDaTab(tab).includes(p.status);
+  });
   const qtdNovos     = pedidos.filter((p) => p.status === 'AGUARDANDO_CONFIRMACAO').length;
-  const qtdEmPreparo = pedidos.filter((p) => p.status === 'EM_PREPARO').length;
+  const qtdEmPreparo = pedidos.filter((p) => p.status === 'EM_PREPARO' && !prontos.has(p.id)).length;
+  const qtdProntos   = pedidos.filter((p) => p.status === 'EM_PREPARO' && prontos.has(p.id)).length;
   const qtdEmEntrega = pedidos.filter((p) => p.status === 'EM_ENTREGA').length;
 
   return (
@@ -441,6 +598,26 @@ export default function RestaurantePedidos() {
           </div>
         </header>
 
+        {/* Banner de novo pedido */}
+        {alertaNovo && (
+          <div className="mx-auto w-full max-w-lg px-4 pt-3">
+            <div className="flex items-center gap-3 rounded-2xl border border-amber-400/60 bg-amber-500/20 px-4 py-3 animate-pulse">
+              <span className="text-2xl">🔔</span>
+              <div className="flex-1">
+                <p className="text-sm font-bold text-amber-300">Novo pedido recebido!</p>
+                <p className="text-xs text-amber-300/70">Verifique a aba "Novos" para confirmar.</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => { setAlertaNovo(false); setTab('Novos'); }}
+                className="rounded-xl bg-amber-500 px-3 py-1 text-xs font-bold text-[#0F1E34] hover:bg-amber-400 transition"
+              >
+                Ver agora
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Tabs */}
         <div className="mx-auto flex w-full max-w-lg gap-2 px-4 pt-4">
           {TABS.map((t) => (
@@ -452,24 +629,45 @@ export default function RestaurantePedidos() {
                 ${tab === t ? 'bg-[#00C4B4] text-[#0F1E34]' : 'border border-[#00C4B4]/40 text-[#00C4B4]/70 hover:border-[#00C4B4]'}`}
             >
               {t}
-              {t === 'Novos'      && qtdNovos     > 0 && (
-                <span className="ml-1 inline-flex h-4 w-4 items-center justify-center rounded-full bg-amber-500 text-[9px] font-bold text-white">
-                  {qtdNovos}
-                </span>
+              {t === 'Novos'             && qtdNovos     > 0 && (
+                <span className="ml-1 inline-flex h-4 w-4 items-center justify-center rounded-full bg-amber-500 text-[9px] font-bold text-white">{qtdNovos}</span>
               )}
-              {t === 'Em Preparo' && qtdEmPreparo > 0 && (
-                <span className="ml-1 inline-flex h-4 w-4 items-center justify-center rounded-full bg-orange-500 text-[9px] font-bold text-white">
-                  {qtdEmPreparo}
-                </span>
+              {t === 'Em Preparo'        && qtdEmPreparo > 0 && (
+                <span className="ml-1 inline-flex h-4 w-4 items-center justify-center rounded-full bg-orange-500 text-[9px] font-bold text-white">{qtdEmPreparo}</span>
               )}
-              {t === 'Em Entrega' && qtdEmEntrega > 0 && (
-                <span className="ml-1 inline-flex h-4 w-4 items-center justify-center rounded-full bg-purple-500 text-[9px] font-bold text-white">
-                  {qtdEmEntrega}
-                </span>
+              {t === 'Pronto p/ Entrega' && qtdProntos   > 0 && (
+                <span className="ml-1 inline-flex h-4 w-4 items-center justify-center rounded-full bg-green-500 text-[9px] font-bold text-white">{qtdProntos}</span>
+              )}
+              {t === 'Em Entrega'        && qtdEmEntrega > 0 && (
+                <span className="ml-1 inline-flex h-4 w-4 items-center justify-center rounded-full bg-purple-500 text-[9px] font-bold text-white">{qtdEmEntrega}</span>
               )}
             </button>
           ))}
         </div>
+
+        {/* Banner de atraso */}
+        {(() => {
+          const atrasados = pedidos.filter((p) => {
+            const l = LIMITES_ATRASO[p.status];
+            return l && minutosDecorridos(p.criadoEm ?? p.criado_em) >= l.ambar;
+          });
+          if (atrasados.length === 0) return null;
+          const criticos = atrasados.filter((p) => minutosDecorridos(p.criadoEm ?? p.criado_em) >= LIMITES_ATRASO[p.status].vermelho);
+          const temCritico = criticos.length > 0;
+          return (
+            <div className="mx-auto w-full max-w-lg px-4 pt-2">
+              <div className={`flex items-center gap-3 rounded-2xl border px-4 py-2.5
+                ${temCritico ? 'border-red-500/40 bg-red-500/10' : 'border-amber-500/40 bg-amber-500/10'}`}>
+                <span className="text-base">{temCritico ? '🔴' : '🟡'}</span>
+                <p className={`text-xs font-semibold ${temCritico ? 'text-red-300' : 'text-amber-300'}`}>
+                  {temCritico
+                    ? `${criticos.length} pedido${criticos.length > 1 ? 's' : ''} com atraso crítico!`
+                    : `${atrasados.length} pedido${atrasados.length > 1 ? 's' : ''} precisando de atenção`}
+                </p>
+              </div>
+            </div>
+          );
+        })()}
 
         {/* Conteúdo */}
         <main className="mx-auto w-full max-w-lg flex-1 px-4 py-4">
@@ -490,8 +688,10 @@ export default function RestaurantePedidos() {
                   pedido={pedido}
                   onAvancar={handleAvancarClick}
                   onCancelar={handleCancelar}
+                  onMarcarPronto={marcarPronto}
+                  isPronto={prontos.has(pedido.id)}
                   avancando={avancando[pedido.id]}
-                    />
+                />
               ))}
             </div>
           )}

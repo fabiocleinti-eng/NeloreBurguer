@@ -18,6 +18,7 @@ function roundMoney(value) {
 
 export function CartProvider({ children }) {
   const [items, setItems] = useState([]);
+  const [addTick, setAddTick] = useState(0);
 
   const total = useMemo(
     () =>
@@ -47,6 +48,7 @@ export function CartProvider({ children }) {
       next[idx] = { ...next[idx], ...item, id, preco, quantidade: q };
       return next;
     });
+    setAddTick((t) => t + 1);
   }, []);
 
   const updateQuantity = useCallback((id, quantidade) => {
@@ -76,8 +78,9 @@ export function CartProvider({ children }) {
       updateQuantity,
       removeItem,
       clearCart,
+      addTick,
     }),
-    [items, total, itemCount, addItem, updateQuantity, removeItem, clearCart]
+    [items, total, itemCount, addItem, updateQuantity, removeItem, clearCart, addTick]
   );
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;

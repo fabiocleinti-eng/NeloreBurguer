@@ -1,7 +1,93 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { RocketLoader } from '@/components/RocketLoader';
-import { entregadoresApi } from '@/services/api';
+import { entregadoresApi, restauranteApi, getStoredToken } from '@/services/api';
+
+function getEmailDoToken() {
+  try {
+    const token = getStoredToken();
+    if (!token) return null;
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    return payload.email || null;
+  } catch { return null; }
+}
+
+function ModalSenha({ nomeEntregador, onConfirmar, onCancelar }) {
+  const [senha, setSenha] = useState('');
+  const [erro, setErro] = useState('');
+  const [verificando, setVerificando] = useState(false);
+  const inputRef = useRef(null);
+
+  useEffect(() => { inputRef.current?.focus(); }, []);
+
+  async function handleConfirmar(e) {
+    e.preventDefault();
+    if (!senha) { setErro('Digite sua senha.'); return; }
+    setVerificando(true);
+    setErro('');
+    try {
+      const email = getEmailDoToken();
+      if (!email) throw new Error('Sessão inválida. Faça login novamente.');
+      await restauranteApi.login({ email, senha });
+      onConfirmar();
+    } catch (err) {
+      const status = err.response?.status;
+      setErro(status === 401 ? 'Senha incorreta.' : err.message || 'Erro ao verificar senha.');
+    } finally {
+      setVerificando(false);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm px-4">
+      <div className="w-full max-w-sm rounded-2xl bg-[#1A2B4A] p-6 shadow-2xl border border-red-500/30">
+        <div className="mb-4 flex flex-col items-center gap-2 text-center">
+          <span className="text-4xl">🔐</span>
+          <h2 className="text-lg font-bold text-white">Confirmar exclusão</h2>
+          <p className="text-sm text-white/60">
+            Para excluir <span className="font-semibold text-white">{nomeEntregador}</span>, confirme sua senha de acesso.
+          </p>
+        </div>
+
+        <form onSubmit={handleConfirmar} className="flex flex-col gap-3">
+          <input
+            ref={inputRef}
+            type="password"
+            placeholder="Sua senha"
+            value={senha}
+            onChange={(e) => { setSenha(e.target.value); setErro(''); }}
+            disabled={verificando}
+            className="h-11 w-full rounded-xl border-2 border-[#00C4B4]/40 bg-[#0F1E34] px-4 text-white placeholder:text-white/30 focus:border-[#00C4B4] focus:outline-none disabled:opacity-50"
+          />
+
+          {erro && (
+            <p className="rounded-lg bg-red-500/20 px-3 py-2 text-center text-sm font-semibold text-red-300">
+              ⚠ {erro}
+            </p>
+          )}
+
+          <div className="mt-1 flex gap-3">
+            <button
+              type="button"
+              onClick={onCancelar}
+              disabled={verificando}
+              className="flex-1 rounded-xl border-2 border-white/20 py-2.5 text-sm text-white/70 hover:border-white/40 transition disabled:opacity-50"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              disabled={verificando || !senha}
+              className="flex-1 rounded-xl bg-red-600 py-2.5 text-sm font-bold text-white hover:bg-red-500 transition disabled:opacity-40"
+            >
+              {verificando ? 'Verificando…' : 'Excluir'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
 
 function lerArquivoComoDataURL(file) {
   return new Promise((resolve, reject) => {
@@ -111,11 +197,33 @@ export default function RestauranteEntregadores() {
     }
   }
 
-  async function handleToggleAtivo(id, ativo) {
+  async function handleToggleAtivo(id, status) {
+    const novoAtivo = status !== 'DISPONIVEL';
     try {
-      await entregadoresApi.atualizarStatus(id, !ativo);
+      await entregadoresApi.atualizarStatus(id, novoAtivo);
       carregarEntregadores();
     } catch { /* silencioso */ }
+  }
+
+  const [excluindo, setExcluindo] = useState(null);
+  const [modalExcluir, setModalExcluir] = useState(null); // { id, nome, status }
+
+  async function confirmarExclusao() {
+    const { id, status } = modalExcluir;
+    setModalExcluir(null);
+    setExcluindo(id);
+    try {
+      if (status !== 'INATIVO') {
+        await entregadoresApi.atualizarStatus(id, false);
+      }
+      await entregadoresApi.deletar(id);
+      carregarEntregadores();
+    } catch (err) {
+      const msg = err.response?.data?.error || err.message || 'Erro ao excluir.';
+      alert(msg);
+    } finally {
+      setExcluindo(null);
+    }
   }
 
   const inputClass =
@@ -250,20 +358,53 @@ export default function RestauranteEntregadores() {
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold text-white truncate">{e.nome}</p>
                   <p className="text-xs text-white/50 truncate">{e.email}</p>
-                  {e.veiculo && <p className="text-xs text-[#00C4B4]/80">🛵 {e.veiculo}{e.placa ? ` · ${e.placa}` : ''}</p>}
+                  {e.veiculo && (
+                    <p className="text-xs text-[#00C4B4]/80">
+                      🛵 {typeof e.veiculo === 'object' ? e.veiculo.tipo : e.veiculo}
+                      {(typeof e.veiculo === 'object' ? e.veiculo.placa : e.placa) ? ` · ${typeof e.veiculo === 'object' ? e.veiculo.placa : e.placa}` : ''}
+                    </p>
+                  )}
                 </div>
-                <button
-                  type="button"
-                  onClick={() => handleToggleAtivo(e.id, e.ativo)}
-                  className={`rounded-full px-3 py-1 text-xs font-semibold ${e.ativo ? 'bg-green-700/50 text-green-300' : 'bg-red-800/50 text-red-300'}`}
-                >
-                  {e.ativo ? 'Ativo' : 'Inativo'}
-                </button>
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => handleToggleAtivo(e.id, e.status)}
+                    disabled={e.status === 'EM_ENTREGA'}
+                    title={e.status === 'EM_ENTREGA' ? 'Em entrega — não pode alterar' : e.status === 'DISPONIVEL' ? 'Clique para inativar' : 'Clique para ativar'}
+                    className={`rounded-full px-3 py-1 text-xs font-semibold transition ${
+                      e.status === 'DISPONIVEL'
+                        ? 'bg-green-700/50 text-green-300 hover:bg-red-800/50 hover:text-red-300'
+                        : e.status === 'EM_ENTREGA'
+                          ? 'bg-purple-700/50 text-purple-300 cursor-not-allowed'
+                          : 'bg-red-800/50 text-red-300 hover:bg-green-700/50 hover:text-green-300'
+                    }`}
+                  >
+                    {e.status === 'DISPONIVEL' ? '● Ativo' : e.status === 'EM_ENTREGA' ? '🛵 Em entrega' : '● Inativo'}
+                  </button>
+
+                  <button
+                    type="button"
+                    disabled={excluindo === e.id || e.status === 'EM_ENTREGA'}
+                    onClick={() => setModalExcluir({ id: e.id, nome: e.nome, status: e.status })}
+                    title={e.status === 'EM_ENTREGA' ? 'Em entrega — não pode excluir' : 'Excluir entregador'}
+                    className="flex h-7 w-7 items-center justify-center rounded-full bg-red-900/40 text-red-400 transition hover:bg-red-700/60 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed"
+                  >
+                    {excluindo === e.id ? '…' : '🗑'}
+                  </button>
+                </div>
               </div>
             ))}
           </div>
         )}
       </main>
+
+      {modalExcluir && (
+        <ModalSenha
+          nomeEntregador={modalExcluir.nome}
+          onConfirmar={confirmarExclusao}
+          onCancelar={() => setModalExcluir(null)}
+        />
+      )}
     </div>
   );
 }

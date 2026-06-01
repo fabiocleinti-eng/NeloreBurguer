@@ -133,9 +133,9 @@ export default function LojaCategoria() {
                     <button
                       type="button"
                       onClick={() => handleAdicionar(p)}
-                      className={`mt-auto w-full rounded-xl py-2 text-sm font-bold transition ${
+                      className={`mt-auto w-full rounded-xl py-2 text-sm font-bold transition-colors ${
                         adicionados[p.id]
-                          ? 'bg-[#2D7A4F] text-white'
+                          ? 'bg-[#2D7A4F] text-white btn-pop'
                           : 'bg-[#3CB371] text-white hover:opacity-90'
                       }`}
                     >

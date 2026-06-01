@@ -36,10 +36,12 @@ export default function RestauranteLogin() {
         setErro('Login OK, mas o servidor não enviou um token. Contacte o suporte.');
         return;
       }
-      // Salva o ID do restaurante para uso em todo o painel
-      const restId = extrairRestauranteIdDoToken(token)
-        || data?.restauranteId || data?.restaurante?.id || data?.id;
-      if (restId) sessionStorage.setItem('nelore_restaurante_id', restId);
+      // Prioriza o ID direto da resposta (UUID do banco), só usa token como fallback
+      const restId = data?.restaurante?.id
+        || data?.restauranteId
+        || extrairRestauranteIdDoToken(token)
+        || data?.id;
+      if (restId) sessionStorage.setItem('nelore_restaurante_id', String(restId));
       navigate('/restaurante/dashboard', { replace: true });
     } catch (err) {
       const msg =

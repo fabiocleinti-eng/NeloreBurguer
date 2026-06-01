@@ -1,5 +1,4 @@
 import { usuariosApi } from "@/services/api";
-import fotoCapa from "@assets/images/fotoCapa.png";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
@@ -181,11 +180,11 @@ export default function Cadastro() {
   if (sucesso) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-[#2D7A4F] to-[#3CB371] px-4 pb-10 pt-8 font-sans">
-        <img
-          src={fotoCapa}
-          alt="NeloreBurguer"
-          className="mb-6 h-[143px] w-[253px] max-w-full object-contain"
-        />
+        <div className="mb-6 flex flex-col items-center gap-1">
+          <span className="text-5xl" style={{ filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.3))' }}>🚀</span>
+          <h1 className="text-3xl font-extrabold tracking-tight text-white drop-shadow-md">Pede<span className="text-white/75">Fácil</span></h1>
+          <p className="text-xs text-white/55 tracking-wide">Peça rápido, receba fácil</p>
+        </div>
         <div className="flex w-full max-w-[300px] flex-col items-center gap-4 text-center">
           <span className="text-5xl">✅</span>
           <h2 className="text-xl font-bold text-white">Cadastro realizado!</h2>
@@ -207,12 +206,10 @@ export default function Cadastro() {
   /* ── Formulário ── */
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-[#2D7A4F] to-[#3CB371] px-4 pb-10 pt-8 font-sans text-[13px] text-white">
-      <div className="flex flex-row items-center justify-center pb-5">
-        <img
-          src={fotoCapa}
-          alt="NeloreBurguer"
-          className="h-[143px] w-[253px] max-w-full object-contain"
-        />
+      <div className="flex flex-col items-center gap-1 pb-5">
+        <span className="text-5xl" style={{ filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.3))' }}>🚀</span>
+        <h1 className="text-3xl font-extrabold tracking-tight text-white drop-shadow-md">Pede<span className="text-white/75">Fácil</span></h1>
+        <p className="text-xs text-white/55 tracking-wide">Peça rápido, receba fácil</p>
       </div>
 
       <h1 className="mb-6 text-center text-xl font-bold text-white">

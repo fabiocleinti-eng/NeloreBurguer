@@ -34,13 +34,17 @@ export function clearStoredToken() {
   } catch { /* ignore */ }
 }
 
-function clearSessionAndRedirectToLogin() {
+function clearSessionAndRedirectToLogin(requestUrl = '') {
   clearStoredToken();
+  const isRestauranteContext =
+    window.location.pathname.startsWith('/restaurante') ||
+    requestUrl.includes('/restaurantes');
+  const loginPath = isRestauranteContext ? '/restaurante/login' : '/login';
   const path = `${window.location.pathname}${window.location.search}${window.location.hash}`;
   if (authNavigate) {
-    authNavigate('/login', { replace: true, state: { from: path } });
+    authNavigate(loginPath, { replace: true, state: { from: path } });
   } else {
-    window.location.assign('/login');
+    window.location.assign(loginPath);
   }
 }
 
@@ -70,7 +74,7 @@ api.interceptors.response.use(
     const status = error.response?.status;
 
     if (status === 401 || status === 403) {
-      clearSessionAndRedirectToLogin();
+      clearSessionAndRedirectToLogin(error.config?.url || '');
       return Promise.reject(error);
     }
     if (status === 429) {
@@ -136,6 +140,9 @@ export const cardapioApi = {
 
   criarItem: (body) => api.post('/api/itens', body),
 
+  atualizarItem: (itemId, body) =>
+    api.patch(`/api/itens/${encodeURIComponent(itemId)}`, body),
+
   atualizarItemImagem: (itemId, _categoriaId, dataUrl) =>
     api.patch(`/api/itens/${encodeURIComponent(itemId)}/imagem`, { imagem: dataUrl }),
 
@@ -157,11 +164,12 @@ export const pedidosApi = {
 export const restaurantePedidosApi = {
   listar: (restauranteId) => {
     const rid = restauranteId || sessionStorage.getItem('nelore_restaurante_id') || '';
-    return api.get(`/api/restaurantes/${encodeURIComponent(rid)}/pedidos`);
+    return api.get(`/api/pedidos/restaurante/${encodeURIComponent(rid)}`);
   },
   atualizarStatus: (id, status, entregador) =>
     api.patch(`/api/pedidos/${encodeURIComponent(id)}/status`, {
       status,
+      origem: 'SISTEMA',
       entregador_id: entregador?.id,
     }),
 };
@@ -174,11 +182,16 @@ export const entregadoresApi = {
   statusEntrega: (pedidoId) => api.get(`/api/entregadores/status/${encodeURIComponent(pedidoId)}`),
   listar:        ()         => api.get('/api/entregadores'),
   cadastrar:     (body)     => api.post('/api/entregadores', body),
-  atualizarStatus: (id, ativo) =>
-    api.patch(`/api/entregadores/${encodeURIComponent(id)}`, { ativo }),
+  atualizarStatus: (id, ativoOuStatus) => {
+    const status = typeof ativoOuStatus === 'string'
+      ? ativoOuStatus
+      : ativoOuStatus ? 'DISPONIVEL' : 'INATIVO';
+    return api.patch(`/api/entregadores/${encodeURIComponent(id)}/status`, { status });
+  },
+  deletar: (id) => api.delete(`/api/entregadores/${encodeURIComponent(id)}`),
 };
 
 export const restauranteApi = {
-  login:   (body) => api.post('/api/usuarios/login', body),
-  cadastro:(body) => api.post('/api/usuarios/register/restaurante', body),
+  login:   (body) => api.post('/api/restaurantes/login', body),
+  cadastro:(body) => api.post('/api/restaurantes/cadastro', body),
 };

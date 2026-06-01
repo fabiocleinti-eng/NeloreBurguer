@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { LojaHeader } from '@/components/loja/LojaHeader';
 import { LojaBottomNav } from '@/components/loja/LojaBottomNav';
 import { RocketLoader } from '@/components/RocketLoader';
-import { restaurantesApi } from '@/services/api';
+import { restaurantesApi, getStoredToken } from '@/services/api';
 
 const RESTAURANTE_ID_KEY = 'nelore_restaurante_id';
 
@@ -70,6 +70,15 @@ function CardRestaurante({ restaurante, onClick }) {
 export default function LojaHome() {
   const navigate = useNavigate();
   const [restaurantes, setRestaurantes] = useState([]);
+  const [nomeUsuario] = useState(() => {
+    try {
+      const token = getStoredToken();
+      if (!token) return null;
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      const nome = payload.nome || payload.name || payload.nomeCliente || null;
+      return nome ? nome.split(' ')[0] : null;
+    } catch { return null; }
+  });
   const [carregando, setCarregando] = useState(true);
   const [busca, setBusca] = useState('');
 
@@ -112,10 +121,17 @@ export default function LojaHome() {
     navigate(`/loja/restaurante/${restaurante.id}`);
   }
 
-  const filtrados = restaurantes.filter((r) =>
-    r.nome.toLowerCase().includes(busca.toLowerCase()) ||
-    r.tipo.toLowerCase().includes(busca.toLowerCase())
-  );
+  const filtrados = restaurantes
+    .filter((r) =>
+      r.nome.toLowerCase().includes(busca.toLowerCase()) ||
+      r.tipo.toLowerCase().includes(busca.toLowerCase())
+    )
+    .sort((a, b) => {
+      const aAberto = a.status === 'ABERTO';
+      const bAberto = b.status === 'ABERTO';
+      if (aAberto !== bAberto) return aAberto ? -1 : 1;
+      return a.nome.localeCompare(b.nome, 'pt-BR');
+    });
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-gradient-to-b from-[#2D7A4F] to-[#3CB371]">
@@ -123,6 +139,13 @@ export default function LojaHome() {
       <div className="mx-auto w-full max-w-lg shrink-0">
         <LojaHeader />
       </div>
+
+      {/* Saudação */}
+      {nomeUsuario && (
+        <div className="mx-auto w-full max-w-lg shrink-0 px-5 pb-1">
+          <p className="text-base font-semibold text-white">Olá, {nomeUsuario}! 👋</p>
+        </div>
+      )}
 
       {/* Barra de busca */}
       <div className="mx-auto w-full max-w-lg shrink-0 px-4 pb-3">

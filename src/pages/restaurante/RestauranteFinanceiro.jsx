@@ -30,19 +30,24 @@ const METODO_INFO = {
   CARTAO_DEBITO:       { icon: '💳', label: 'Débito (online)',    cor: 'text-cyan-300',   bg: 'bg-cyan-500/10   border-cyan-500/30'   },
 };
 
+function campo(p, snake, camel) {
+  return p[camel] ?? p[snake] ?? 0;
+}
+
 // Agrupa pedidos entregues por forma de pagamento
 function calcularFinanceiro(pedidos) {
-  const hoje = pedidos.filter((p) => p.status === 'ENTREGUE' && ehHoje(p.criado_em));
-  const totalGeral = hoje.reduce((s, p) => s + (p.total_centavos || 0), 0);
-  const totalSemTaxa = hoje.reduce((s, p) => s + (p.subtotal_centavos || p.total_centavos || 0), 0);
-  const totalTaxa = hoje.reduce((s, p) => s + (p.taxa_entrega_centavos || 0), 0);
+  const hoje = pedidos.filter((p) =>
+    p.status === 'ENTREGUE' && ehHoje(p.criadoEm ?? p.criado_em)
+  );
+  const totalGeral   = hoje.reduce((s, p) => s + campo(p, 'total_centavos',         'total'),        0);
+  const totalSemTaxa = hoje.reduce((s, p) => s + campo(p, 'subtotal_centavos',       'subtotal'),     0);
+  const totalTaxa    = hoje.reduce((s, p) => s + campo(p, 'taxa_entrega_centavos',   'taxaEntrega'),  0);
 
-  // Agrupa por método
   const porMetodo = {};
   for (const p of hoje) {
-    const m = p.forma_pagamento || 'OUTRO';
+    const m = p.formaPagamento ?? p.forma_pagamento ?? 'OUTRO';
     if (!porMetodo[m]) porMetodo[m] = { total: 0, qtd: 0 };
-    porMetodo[m].total += p.total_centavos || 0;
+    porMetodo[m].total += campo(p, 'total_centavos', 'total');
     porMetodo[m].qtd   += 1;
   }
 
@@ -164,17 +169,18 @@ export default function RestauranteFinanceiro() {
               <h2 className="mb-3 text-xs font-bold uppercase tracking-widest text-[#00C4B4]">Pedidos entregues hoje</h2>
               <div className="flex flex-col gap-2">
                 {[...dados.hoje].reverse().map((p) => {
-                  const info = METODO_INFO[p.forma_pagamento] || { icon: '💰', label: p.forma_pagamento };
+                  const fp = p.formaPagamento ?? p.forma_pagamento;
+                  const info = METODO_INFO[fp] || { icon: '💰', label: fp };
                   return (
                     <div key={p.id} className="flex items-center gap-3 rounded-xl border border-white/10 bg-[#1A2B4A]/60 px-4 py-3">
                       <span className="text-lg">{info.icon}</span>
                       <div className="flex-1 min-w-0">
                         <p className="text-xs font-bold text-white">#{p.id?.slice(-6).toUpperCase()}</p>
-                        <p className="text-[10px] text-white/40 truncate">{p.cliente?.nome || 'Cliente'} · {info.label}</p>
+                        <p className="text-[10px] text-white/40 truncate">{p.cliente?.nome ?? `Cliente #${String(p.clienteId ?? '').slice(-4)}`} · {info.label}</p>
                       </div>
                       <div className="text-right shrink-0">
-                        <p className="text-sm font-bold text-[#00C4B4]">{formatarReais(p.total_centavos)}</p>
-                        <p className="text-[10px] text-white/30">{formatarHora(p.criado_em)}</p>
+                        <p className="text-sm font-bold text-[#00C4B4]">{formatarReais(p.total ?? p.total_centavos)}</p>
+                        <p className="text-[10px] text-white/30">{formatarHora(p.criadoEm ?? p.criado_em)}</p>
                       </div>
                     </div>
                   );
