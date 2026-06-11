@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { RocketLoader } from '@/components/RocketLoader';
+import { RocketLoader } from '@/components/common/RocketLoader';
 import { cardapioApi } from '@/services/api';
 
 function lerArquivoComoDataURL(file) {

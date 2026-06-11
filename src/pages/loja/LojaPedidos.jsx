@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { LojaHeader } from '@/components/loja/LojaHeader';
 import { LojaBottomNav } from '@/components/loja/LojaBottomNav';
-import { RocketLoader } from '@/components/RocketLoader';
+import { RocketLoader } from '@/components/common/RocketLoader';
 import { pedidosApi, restaurantesApi } from '@/services/api';
 
 const STATUS_LABEL = {

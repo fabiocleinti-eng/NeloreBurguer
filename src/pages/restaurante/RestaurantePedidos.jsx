@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { RocketLoader } from '@/components/RocketLoader';
+import { RocketLoader } from '@/components/common/RocketLoader';
 import { restaurantePedidosApi, pedidosApi, entregadoresApi, getStoredToken } from '@/services/api';
 
 // ─── Constantes de status ─────────────────────────────────────────────────────

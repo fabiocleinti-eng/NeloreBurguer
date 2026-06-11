@@ -70,12 +70,4 @@ export function adicionarNotificacaoApp({ titulo, mensagem }) {
   adicionarNotificacao({ tipo: 'INFO', titulo, mensagem });
 }
 
-// Notificações demo pré-carregadas (só adiciona se não existirem)
-export function carregarNotificacoesDemo() {
-  const lista = getNotificacoes();
-  if (lista.length > 0) return;
-  [
-    { tipo: 'CUPOM', titulo: '🎁 Cupom de boas-vindas', mensagem: 'Use o código PEDEFACIL10 e ganhe 10% de desconto no seu primeiro pedido!' },
-    { tipo: 'INFO',  titulo: '🆕 Novidade no app',      mensagem: 'Agora você pode acompanhar sua entrega em tempo real na área de pedidos.' },
-  ].forEach((n) => adicionarNotificacao(n));
-}
+export function carregarNotificacoesDemo() {}

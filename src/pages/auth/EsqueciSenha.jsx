@@ -129,14 +129,6 @@ export default function EsqueciSenha() {
         />
       </div>
 
-      <div className="mt-5 flex flex-row items-center gap-1.5 text-[18px] text-[#FFA801]">
-        <span className="inline-block h-9 w-9 text-red-500" aria-hidden>
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-full w-full">
-            <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" />
-          </svg>
-        </span>
-        <span>Tavares Bastos, Rua Cruzeiro do Sul 131</span>
-      </div>
     </div>
   );
 }

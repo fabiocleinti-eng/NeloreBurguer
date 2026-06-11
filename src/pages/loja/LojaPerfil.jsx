@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { LojaHeader } from '@/components/loja/LojaHeader';
 import { LojaBottomNav } from '@/components/loja/LojaBottomNav';
-import { clearStoredToken, getStoredToken, usuariosApi } from '@/services/api';
+import { clearStoredToken, getStoredToken, persistTokenFromResponse, usuariosApi } from '@/services/api';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function decodeToken(token) {
@@ -72,7 +72,7 @@ const inputClass =
   'w-full rounded-xl border border-zinc-200 bg-white px-3 py-2.5 text-sm text-zinc-800 placeholder:text-zinc-400 focus:border-[#3CB371] focus:outline-none';
 
 // ─── Seção: Editar Perfil ─────────────────────────────────────────────────────
-function EditarPerfil({ usuario }) {
+function EditarPerfil({ usuario, onNomeAtualizado }) {
   const [form, setForm] = useState({
     nome: usuario?.nome || usuario?.name || '',
     telefone: usuario?.telefone || '',
@@ -103,18 +103,15 @@ function EditarPerfil({ usuario }) {
       const payload = { nome: form.nome.trim() };
       if (form.telefone) payload.telefone = form.telefone;
       if (form.senhaNova) { payload.senhaAtual = form.senhaAtual; payload.senhaNova = form.senhaNova; }
-      await usuariosApi.atualizarPerfil(payload);
+      const { data } = await usuariosApi.atualizarPerfil(payload);
+      persistTokenFromResponse(data);
+      onNomeAtualizado?.(form.nome.trim());
       setSucesso('Perfil atualizado com sucesso!');
       setForm((f) => ({ ...f, senhaAtual: '', senhaNova: '', senhaConfirm: '' }));
       setTimeout(() => setSucesso(''), 3000);
     } catch (err) {
       const msg = err.response?.data?.message ?? err.message ?? '';
-      const indisponivel = err.response?.status === 404 || msg.toLowerCase().includes('not found');
-      setErros({
-        geral: indisponivel
-          ? 'Edição de perfil ainda não está disponível. Em breve!'
-          : msg || 'Erro ao salvar. Tente novamente.',
-      });
+      setErros({ geral: msg || 'Erro ao salvar. Tente novamente.' });
     } finally {
       setSalvando(false);
     }
@@ -359,12 +356,15 @@ export default function LojaPerfil() {
     return token ? decodeToken(token) : null;
   }, []);
 
+  const nomeInicial = usuario?.nome ?? usuario?.name ?? usuario?.sub ?? 'Usuário';
+  const [nomeExibido, setNomeExibido] = useState(nomeInicial);
+
   function handleLogout() {
     clearStoredToken();
     navigate('/login', { replace: true });
   }
 
-  const nome = usuario?.nome ?? usuario?.name ?? usuario?.sub ?? 'Usuário';
+  const nome = nomeExibido;
   const email = usuario?.email ?? '';
   const initials = nome.split(' ').slice(0, 2).map((w) => w[0]?.toUpperCase() ?? '').join('');
 
@@ -403,7 +403,7 @@ export default function LojaPerfil() {
             </Secao>
 
             <Secao titulo="Editar perfil" icone="✏️">
-              <EditarPerfil usuario={usuario} />
+              <EditarPerfil usuario={usuario} onNomeAtualizado={setNomeExibido} />
             </Secao>
 
           </div>

@@ -71,6 +71,7 @@ export default function Cadastro() {
 
   /* Estados de UI */
   const [cepStatus, setCepStatus] = useState("idle"); // idle | buscando | ok | erro
+  const [cpfErro, setCpfErro] = useState("");
   const [loading, setLoading] = useState(false);
   const [erro, setErro] = useState("");
   const [sucesso, setSucesso] = useState(false);
@@ -241,10 +242,20 @@ export default function Cadastro() {
             inputMode="numeric"
             placeholder="000.000.000-00"
             value={cpf}
-            onChange={(e) => setCpf(mascaraCPF(e.target.value))}
+            onChange={(e) => {
+              const masked = mascaraCPF(e.target.value);
+              setCpf(masked);
+              const digits = masked.replace(/\D/g, "");
+              if (digits.length === 11) {
+                setCpfErro(validarCPF(masked) ? "" : "CPF inválido. Verifique os números.");
+              } else {
+                setCpfErro("");
+              }
+            }}
             disabled={loading}
-            className={INPUT_CLASS}
+            className={`${INPUT_CLASS} ${cpfErro ? "border-red-400" : ""}`}
           />
+          {cpfErro && <p className="pl-1 text-xs text-red-400">{cpfErro}</p>}
         </div>
 
         {/* Telefone */}

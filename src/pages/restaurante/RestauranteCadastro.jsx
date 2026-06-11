@@ -191,9 +191,20 @@ export default function RestauranteCadastro() {
         <div>
           <input
             placeholder="CNPJ"
+            inputMode="numeric"
             value={form.cnpj}
-            onChange={(e) => set('cnpj', mascaraCNPJ(e.target.value))}
-            className={inputClass}
+            onChange={(e) => {
+              const masked = mascaraCNPJ(e.target.value);
+              set('cnpj', masked);
+              const digits = masked.replace(/\D/g, '');
+              if (digits.length === 14) {
+                setErros((err) => ({
+                  ...err,
+                  cnpj: validarCNPJ(masked) ? '' : 'CNPJ inválido. Verifique os números.',
+                }));
+              }
+            }}
+            className={`${inputClass} ${erros.cnpj ? 'border-red-400' : ''}`}
           />
           {erros.cnpj && <p className="mt-0.5 pl-3 text-xs text-red-300">{erros.cnpj}</p>}
         </div>

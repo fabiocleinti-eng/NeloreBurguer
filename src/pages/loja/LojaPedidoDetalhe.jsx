@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { LojaHeader } from '@/components/loja/LojaHeader';
 import { LojaBottomNav } from '@/components/loja/LojaBottomNav';
-import { RocketLoader } from '@/components/RocketLoader';
+import { RocketLoader } from '@/components/common/RocketLoader';
 import { pedidosApi, entregadoresApi, restaurantesApi } from '@/services/api';
 import { notificarStatusPedido } from '@/utils/notificacoes';
 

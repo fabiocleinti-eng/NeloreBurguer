@@ -57,7 +57,7 @@ export function LojaHeader() {
         {/* Endereço */}
         <button
           type="button"
-          onClick={() => navigate('/login')}
+          onClick={() => navigate('/loja/perfil')}
           className="flex flex-1 items-center justify-between rounded-[20px] border-2 border-white/40 bg-white/20 px-3 py-1.5 min-w-0"
         >
           <span className="text-white text-sm shrink-0">📍</span>

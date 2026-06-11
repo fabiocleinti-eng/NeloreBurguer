@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { RocketLoader } from '@/components/RocketLoader';
+import { RocketLoader } from '@/components/common/RocketLoader';
 import { entregadoresApi, restauranteApi, getStoredToken } from '@/services/api';
 
 function getEmailDoToken() {
@@ -10,6 +10,32 @@ function getEmailDoToken() {
     const payload = JSON.parse(atob(token.split('.')[1]));
     return payload.email || null;
   } catch { return null; }
+}
+
+function getRestauranteId() {
+  try { return sessionStorage.getItem('nelore_restaurante_id') || 'default'; } catch { return 'default'; }
+}
+
+function getChaveStorage() {
+  return `nelore_entregadores_${getRestauranteId()}`;
+}
+
+function carregarIdsLocais() {
+  try { return JSON.parse(localStorage.getItem(getChaveStorage()) || '[]'); } catch { return []; }
+}
+
+function salvarIdLocal(id) {
+  try {
+    const ids = carregarIdsLocais();
+    if (!ids.includes(id)) { ids.push(id); localStorage.setItem(getChaveStorage(), JSON.stringify(ids)); }
+  } catch { /* ignore */ }
+}
+
+function removerIdLocal(id) {
+  try {
+    const ids = carregarIdsLocais().filter((i) => i !== id);
+    localStorage.setItem(getChaveStorage(), JSON.stringify(ids));
+  } catch { /* ignore */ }
 }
 
 function ModalSenha({ nomeEntregador, onConfirmar, onCancelar }) {
@@ -145,8 +171,9 @@ export default function RestauranteEntregadores() {
     setCarregando(true);
     try {
       const { data } = await entregadoresApi.listar();
-      const lista = Array.isArray(data) ? data : Array.isArray(data?.data) ? data.data : [];
-      setEntregadores(lista);
+      const todos = Array.isArray(data) ? data : Array.isArray(data?.data) ? data.data : [];
+      const idsLocais = carregarIdsLocais();
+      setEntregadores(idsLocais.length > 0 ? todos.filter((e) => idsLocais.includes(e.id)) : []);
     } catch {
       setEntregadores([]);
     } finally {
@@ -176,7 +203,7 @@ export default function RestauranteEntregadores() {
 
     setSalvando(true);
     try {
-      await entregadoresApi.cadastrar({
+      const { data: novo } = await entregadoresApi.cadastrar({
         nome:     form.nome.trim(),
         email:    form.email.trim(),
         telefone: form.telefone || undefined,
@@ -184,6 +211,7 @@ export default function RestauranteEntregadores() {
         placa:    form.placa.trim().toUpperCase() || undefined,
         foto:     form.foto || undefined,
       });
+      if (novo?.id) salvarIdLocal(novo.id);
       setMsgSucesso('Entregador cadastrado com sucesso!');
       setForm(formInicial);
       setAbrirForm(false);
@@ -217,6 +245,7 @@ export default function RestauranteEntregadores() {
         await entregadoresApi.atualizarStatus(id, false);
       }
       await entregadoresApi.deletar(id);
+      removerIdLocal(id);
       carregarEntregadores();
     } catch (err) {
       const msg = err.response?.data?.error || err.message || 'Erro ao excluir.';

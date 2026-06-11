@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import fotoCards from '@assets/images/fotoCards.png';
 import { LojaBottomNav } from '@/components/loja/LojaBottomNav';
-import { RocketLoader } from '@/components/RocketLoader';
+import { RocketLoader } from '@/components/common/RocketLoader';
 import { cardapioApi, restaurantesApi } from '@/services/api';
 
 export default function LojaRestaurante() {
